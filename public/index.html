@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Company Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        form { margin-bottom: 20px; }
+        input, select { margin: 5px; padding: 5px; }
+        button { padding: 5px 10px; margin: 5px; }
+        .location-tab { margin-bottom: 10px; }
+        .location-tab button { margin-right: 10px; }
+        .admin-only { display: none; }
+        .logout { position: absolute; top: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+    <button class="logout" onclick="logout()">Logout</button>
+    <h1>Construction Company Inventory System</h1>
+
+    <h2>Inventory Items</h2>
+    <div class="location-tab">
+        <button onclick="filterByLocation('')">All Locations</button>
+        <button onclick="filterByLocation('Warehouse A')">Warehouse A</button>
+        <button onclick="filterByLocation('Office Supply Room')">Office Supply Room</button>
+        <button onclick="filterByLocation('Site 1')">Site 1</button>
+        <button onclick="filterByLocation('Site 2')">Site 2</button>
+    </div>
+    <table id="itemsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Quantity</th>
+                <th>Location</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="admin-only">
+        <h2>Add New Item</h2>
+        <form id="addItemForm">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="text" id="description" placeholder="Description">
+            <select id="category_id" required>
+                <option value="">Select Category</option>
+            </select>
+            <select id="supplier_id" required>
+                <option value="">Select Supplier</option>
+            </select>
+            <input type="number" id="quantity" placeholder="Quantity" required>
+            <select id="location_id" required>
+                <option value="">Select Location</option>
+            </select>
+            <button type="submit">Add Item</button>
+        </form>
+
+        <h2>Add New Location</h2>
+        <form id="addLocationForm">
+            <input type="text" id="locationName" placeholder="Location Name" required>
+            <button type="submit">Add Location</button>
+        </form>
+    </div>
+
+    <script>
+        const itemsTable = document.getElementById('itemsTable').querySelector('tbody');
+        const addItemForm = document.getElementById('addItemForm');
+        const addLocationForm = document.getElementById('addLocationForm');
+        const categorySelect = document.getElementById('category_id');
+        const supplierSelect = document.getElementById('supplier_id');
+        const locationSelect = document.getElementById('location_id');
+        let allItems = [];
+        let currentFilter = '';
+        let userRole = '';
+        let allLocations = [];
+
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/login');
+        }
+
+        // Load user role
+        fetch('/api/user')
+            .then(response => response.json())
+            .then(data => {
+                userRole = data.role;
+                if (userRole === 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+                }
+            });
+
+        // Load items
+        function loadItems() {
+            fetch('/api/items')
+                .then(response => response.json())
+                .then(items => {
+                    allItems = items;
+                    displayItems();
+                });
+        }
+
+        function displayItems() {
+            itemsTable.innerHTML = '';
+            const filteredItems = currentFilter ? allItems.filter(item => item.location === currentFilter) : allItems;
+            filteredItems.forEach(item => {
+                const row = itemsTable.insertRow();
+                const quantityCell = userRole === 'admin' ? `<input type="number" value="${item.quantity}" onchange="updateQuantity(${item.id}, this.value)">` : item.quantity;
+                const locationOptions = allLocations.map(loc => `<option value="${loc.id}" ${loc.name === item.location ? 'selected' : ''}>${loc.name}</option>`).join('');
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.description || ''}</td>
+                    <td>${item.category || ''}</td>
+                    <td>${item.supplier || ''}</td>
+                    <td>${quantityCell}</td>
+                    <td><select onchange="updateLocation(${item.id}, this.value)">${locationOptions}</select></td>
+                    <td></td>
+                `;
+            });
+        }
+
+        function filterByLocation(location) {
+            currentFilter = location;
+            displayItems();
+        }
+
+        // Load categories, suppliers, locations
+        function loadOptions() {
+            fetch('/api/categories')
+                .then(response => response.json())
+                .then(categories => {
+                    categorySelect.innerHTML = '<option value="">Select Category</option>';
+                    categories.forEach(cat => {
+                        categorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                    });
+                });
+
+            fetch('/api/suppliers')
+                .then(response => response.json())
+                .then(suppliers => {
+                    supplierSelect.innerHTML = '<option value="">Select Supplier</option>';
+                    suppliers.forEach(sup => {
+                        supplierSelect.innerHTML += `<option value="${sup.id}">${sup.name}</option>`;
+                    });
+                });
+
+            fetch('/api/locations')
+                .then(response => response.json())
+                .then(locations => {
+                    allLocations = locations;
+                    locationSelect.innerHTML = '<option value="">Select Location</option>';
+                    locations.forEach(loc => {
+                        locationSelect.innerHTML += `<option value="${loc.id}">${loc.name}</option>`;
+                    });
+                });
+        }
+
+        // Add item
+        addItemForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(addItemForm);
+            const data = Object.fromEntries(formData);
+            data.category_id = parseInt(data.category_id);
+            data.supplier_id = parseInt(data.supplier_id);
+            data.location_id = parseInt(data.location_id);
+            data.quantity = parseInt(data.quantity);
+
+            fetch('/api/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => {
+                loadItems();
+                addItemForm.reset();
+            });
+        });
+
+        // Add location
+        addLocationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('locationName').value;
+            fetch('/api/locations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            })
+            .then(() => {
+                loadOptions();
+                addLocationForm.reset();
+            });
+        });
+
+        // Update quantity
+        function updateQuantity(id, quantity) {
+            fetch(`/api/items/${id}/quantity`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: parseInt(quantity) })
+            });
+        }
+
+        // Update location
+        function updateLocation(id, location_id) {
+            fetch(`/api/items/${id}/location`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ location_id: parseInt(location_id) })
+            })
+            .then(() => loadItems());
+        }
+
+        // Initial load
+        loadItems();
+        loadOptions();
+    </script>
+</body>
+</html>
