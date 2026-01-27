@@ -1,0 +1,271 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100;
+    @apply font-sans antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+
+  /* Button Variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-primary-600 to-primary-500 text-white;
+    @apply hover:from-primary-700 hover:to-primary-600 hover:shadow-lg hover:scale-105;
+    @apply focus:ring-primary-500 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100;
+    @apply hover:bg-slate-300 dark:hover:bg-slate-600 hover:shadow-md;
+    @apply focus:ring-slate-500;
+  }
+
+  .btn-success {
+    @apply btn bg-gradient-to-r from-green-600 to-green-500 text-white;
+    @apply hover:from-green-700 hover:to-green-600 hover:shadow-lg;
+    @apply focus:ring-green-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-gradient-to-r from-red-600 to-red-500 text-white;
+    @apply hover:from-red-700 hover:to-red-600 hover:shadow-lg;
+    @apply focus:ring-red-500;
+  }
+
+  .btn-warning {
+    @apply btn bg-gradient-to-r from-yellow-600 to-yellow-500 text-white;
+    @apply hover:from-yellow-700 hover:to-yellow-600 hover:shadow-lg;
+    @apply focus:ring-yellow-500;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800;
+    @apply text-slate-700 dark:text-slate-300;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  /* Card Component */
+  .card {
+    @apply bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800;
+    @apply transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-xl hover:scale-[1.02] cursor-pointer;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-slate-200 dark:border-slate-800;
+  }
+
+  .card-body {
+    @apply px-6 py-4;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50;
+  }
+
+  /* Badge Component */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300;
+  }
+
+  .badge-gray {
+    @apply badge bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300;
+  }
+
+  /* Input Component */
+  .input {
+    @apply w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700;
+    @apply bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100;
+    @apply focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500;
+  }
+
+  .input-error {
+    @apply input border-red-500 focus:ring-red-500;
+  }
+
+  .select {
+    @apply input cursor-pointer;
+  }
+
+  .textarea {
+    @apply input resize-none;
+  }
+
+  /* Table Component */
+  .table {
+    @apply w-full text-sm text-left;
+  }
+
+  .table-header {
+    @apply bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700;
+  }
+
+  .table-header-cell {
+    @apply px-6 py-3 text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider;
+  }
+
+  .table-row {
+    @apply border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50;
+    @apply transition-colors duration-150;
+  }
+
+  .table-cell {
+    @apply px-6 py-4 text-slate-900 dark:text-slate-100;
+  }
+
+  /* Modal Backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40;
+    @apply flex items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply bg-white dark:bg-slate-900 rounded-2xl shadow-2xl;
+    @apply max-w-2xl w-full max-h-[90vh] overflow-y-auto;
+    @apply border border-slate-200 dark:border-slate-800;
+  }
+
+  /* Stats Card */
+  .stat-card {
+    @apply card p-6 relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/10 to-transparent rounded-full blur-2xl;
+  }
+
+  /* Alert Component */
+  .alert {
+    @apply px-4 py-3 rounded-lg border flex items-start gap-3;
+  }
+
+  .alert-success {
+    @apply alert bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300;
+  }
+
+  .alert-warning {
+    @apply alert bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300;
+  }
+
+  .alert-danger {
+    @apply alert bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300;
+  }
+
+  /* Loading Skeleton */
+  .skeleton {
+    @apply bg-slate-200 dark:bg-slate-800 rounded animate-pulse;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg;
+    @apply border border-white/20 dark:border-slate-700/50;
+  }
+
+  /* Scrollbar Styles */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-slate-100 dark:bg-slate-800 rounded;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-600 rounded hover:bg-slate-400 dark:hover:bg-slate-500;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-in {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .transition-base {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}
+
+/* Custom animations for specific elements */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

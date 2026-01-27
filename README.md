@@ -1,132 +1,72 @@
-# Construction Company Inventory Database
+# Getting Started with Create React App
 
-A full-featured inventory management system for construction companies using Node.js, Express, Sequelize, and SQLite with JWT authentication and role-based access control.
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Features
+## Available Scripts
 
-- **User Authentication**: JWT-based login system
-- **Role-Based Access Control**: Admin and Personnel roles
-- **Inventory Management**: Track office equipment and construction tools
-- **Location Tracking**: Manage multiple locations (warehouses, sites, etc.)
-- **Real-time Updates**: Change item locations and quantities
-- **Responsive UI**: Bootstrap-based modern interface
-- **RESTful API**: Well-structured API endpoints
-- **Data Validation**: Input validation with Joi
-- **Security**: Helmet, CORS, and secure practices
-- **Scalable Architecture**: MVC pattern with Sequelize ORM
+In the project directory, you can run:
 
-## Tech Stack
+### `npm start`
 
-- **Backend**: Node.js, Express.js
-- **Database**: SQLite with Sequelize ORM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Frontend**: EJS templates with Bootstrap
-- **Validation**: Joi
-- **Security**: Helmet, CORS, Morgan logging
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-## Setup
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
-1. **Install dependencies**:
-   ```
-   npm install
-   ```
+### `npm test`
 
-2. **Initialize the database with sample data**:
-   ```
-   npm run init
-   ```
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-3. **Start the development server**:
-   ```
-   npm run dev
-   ```
+### `npm run build`
 
-   Or for production:
-   ```
-   npm start
-   ```
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-4. **Access the application**:
-   Open your browser and go to `http://localhost:3002`
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-## Usage
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### Login Credentials
+### `npm run eject`
 
-- **Admin**: username `admin`, password `adminpass`
-- **Personnel**: username `personnel1`, password `personnelpass`
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-### Admin Features
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-- View all inventory items
-- Filter items by location
-- Add new items
-- Update item quantities
-- Add new locations
-- Change item locations
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-### Personnel Features
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-- View all inventory items
-- Filter by location
-- Change item locations (to track movement between sites)
+## Learn More
 
-## API Endpoints
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-### Authentication
-- `POST /api/auth/login` - User login
-- `GET /api/auth/profile` - Get user profile (authenticated)
+To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Items
-- `GET /api/items` - Get all items (authenticated)
-- `POST /api/items` - Creanpm startte new item (admin)
-- `PUT /api/items/:id/location` - Update item location (authenticated)
-- `PUT /api/items/:id/quantity` - Update item quantity (admin)
+### Code Splitting
 
-### Locations
-- `GET /api/locations` - Get all locations (authenticated)
-- `POST /api/locations` - Create new location (admin)
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Categories & Suppliers
-- `GET /api/categories` - Get all categories (authenticated)
-- `GET /api/suppliers` - Get all suppliers (authenticated)
+### Analyzing the Bundle Size
 
-## Database Schema
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-- **Users**: id, username, password, role
-- **Categories**: id, name
-- **Suppliers**: id, name, contact
-- **Locations**: id, name
-- **Items**: id, name, description, quantity, category_id, supplier_id, location_id
+### Making a Progressive Web App
 
-## Project Structure
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-```
-jossiedb/
-├── models/          # Sequelize models
-├── routes/          # API routes
-├── controllers/     # Business logic
-├── middleware/      # Auth middleware
-├── views/           # EJS templates
-├── public/          # Static files
-├── scripts/         # Database initialization
-├── server.js        # Main application file
-└── package.json
-```
+### Advanced Configuration
 
-## Security Features
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-- JWT token-based authentication
-- Password hashing with bcrypt
-- Helmet for security headers
-- CORS configuration
-- Input validation and sanitization
-- Role-based access control
+### Deployment
 
-## Development
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-- Use `npm run dev` for development with nodemon
-- Environment variables can be set in `.env` file
-- Database is SQLite for easy development and deployment
+### `npm run build` fails to minify
 
-This system is designed to handle multiple users efficiently and can be easily extended with additional features like user management, reporting, or integration with other systems.# Jossiedb
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# db
+# db
