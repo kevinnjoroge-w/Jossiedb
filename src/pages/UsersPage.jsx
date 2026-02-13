@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, X, Shield, User, Lock, Mail } from 'lucide-react';
 import { userService } from '../services/userService';
+import api from '../utils/api';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,11 +21,13 @@ const UsersPage = () => {
         email: '',
         password: '',
         full_name: '',
-        role: 'worker'
+        role: 'worker',
+        assigned_location_ids: []
     });
 
     useEffect(() => {
         fetchUsers();
+        fetchLocations();
     }, []);
 
     const fetchUsers = async () => {
@@ -38,11 +42,20 @@ const UsersPage = () => {
         }
     };
 
+    const fetchLocations = async () => {
+        try {
+            const res = await api.get('/locations');
+            setLocations(res.data);
+        } catch (error) {
+            console.error('Failed to load locations', error);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (currentUser) {
-                await userService.updateUser(currentUser.id, formData);
+                await userService.updateUser(currentUser._id || currentUser.id, formData);
                 toast.success('User updated successfully');
             } else {
                 await userService.createUser(formData);
@@ -75,7 +88,8 @@ const UsersPage = () => {
             email: user.email,
             password: '', // Leave empty if not changing
             full_name: user.full_name,
-            role: user.role
+            role: user.role,
+            assigned_location_ids: (user.assigned_locations || []).map(loc => loc._id || loc.id)
         });
         setIsModalOpen(true);
     };
@@ -87,14 +101,26 @@ const UsersPage = () => {
             email: '',
             password: '',
             full_name: '',
-            role: 'worker'
+            role: 'worker',
+            assigned_location_ids: []
+        });
+    };
+
+    const toggleLocation = (locId) => {
+        setFormData(prev => {
+            const current = prev.assigned_location_ids || [];
+            if (current.includes(locId)) {
+                return { ...prev, assigned_location_ids: current.filter(id => id !== locId) };
+            } else {
+                return { ...prev, assigned_location_ids: [...current, locId] };
+            }
         });
     };
 
     const filteredUsers = users.filter(user =>
-        user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -128,21 +154,20 @@ const UsersPage = () => {
                             <tr className="border-b border-slate-700/50 bg-slate-800/30">
                                 <th className="p-4 text-slate-400 font-medium">User</th>
                                 <th className="p-4 text-slate-400 font-medium">Role</th>
-                                <th className="p-4 text-slate-400 font-medium">Status</th>
-                                <th className="p-4 text-slate-400 font-medium">Last Login</th>
+                                <th className="p-4 text-slate-400 font-medium">Assigned Locations</th>
                                 <th className="p-4 text-slate-400 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredUsers.map((user) => (
-                                <tr key={user.id} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
+                                <tr key={user._id || user.id} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center space-x-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">
-                                                {user.full_name.charAt(0)}
+                                                {user.full_name?.charAt(0) || user.username.charAt(0)}
                                             </div>
                                             <div>
-                                                <p className="text-white font-medium">{user.full_name}</p>
+                                                <p className="text-white font-medium">{user.full_name || user.username}</p>
                                                 <p className="text-sm text-slate-400">{user.email}</p>
                                             </div>
                                         </div>
@@ -156,20 +181,26 @@ const UsersPage = () => {
                                         </span>
                                     </td>
                                     <td className="p-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                                            }`}>
-                                            {user.status === 'active' ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-slate-400 text-sm">
-                                        {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                                        <div className="flex flex-wrap gap-1">
+                                            {user.assigned_locations?.length > 0 ? (
+                                                user.assigned_locations.map(loc => (
+                                                    <span key={loc._id || loc.id} className="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">
+                                                        {loc.name}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-slate-500 text-xs italic">
+                                                    {user.role === 'admin' || user.role === 'supervisor' ? 'All Locations' : 'No Locations'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end space-x-2">
                                             <button onClick={() => openEditModal(user)} className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => handleDelete(user.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
+                                            <button onClick={() => handleDelete(user._id || user.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -201,7 +232,7 @@ const UsersPage = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden"
+                            className="relative w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
                         >
                             <div className="p-6 border-b border-slate-800 flex justify-between items-center">
                                 <h2 className="text-xl font-bold text-white">
@@ -212,7 +243,7 @@ const UsersPage = () => {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
                                 <Input
                                     label="Full Name"
                                     value={formData.full_name}
@@ -245,7 +276,7 @@ const UsersPage = () => {
                                 />
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Role</label>
+                                    <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">Role</label>
                                     <select
                                         value={formData.role}
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
@@ -259,7 +290,33 @@ const UsersPage = () => {
                                     </select>
                                 </div>
 
-                                <div className="pt-4 flex justify-end space-x-3">
+                                {formData.role !== 'admin' && formData.role !== 'supervisor' && (
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">
+                                            Assign Locations
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-800 rounded-lg border border-slate-700 custom-scrollbar">
+                                            {locations.map(loc => (
+                                                <label key={loc._id || loc.id} className="flex items-center space-x-2 cursor-pointer group">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.assigned_location_ids?.includes(loc._id || loc.id)}
+                                                        onChange={() => toggleLocation(loc._id || loc.id)}
+                                                        className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-primary-500 focus:ring-primary-500 focus:ring-offset-slate-900"
+                                                    />
+                                                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                                                        {loc.name}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                            {locations.length === 0 && (
+                                                <p className="text-slate-500 text-sm col-span-2">No locations available</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="pt-4 flex justify-end space-x-3 sticky bottom-0 bg-slate-900 border-t border-slate-800 -mx-6 px-6 pb-2 mt-4">
                                     <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
                                         Cancel
                                     </Button>

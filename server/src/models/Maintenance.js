@@ -1,37 +1,48 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Maintenance = sequelize.define('Maintenance', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+const maintenanceSchema = new mongoose.Schema({
+    item_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Item',
+        required: true
+    },
+    technician_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     type: {
-        type: DataTypes.ENUM('preventive', 'corrective', 'inspection'),
-        defaultValue: 'preventive'
+        type: String,
+        enum: ['preventive', 'corrective', 'inspection'],
+        default: 'preventive'
     },
     description: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: String,
+        required: true
     },
     status: {
-        type: DataTypes.ENUM('scheduled', 'in_progress', 'completed', 'cancelled'),
-        defaultValue: 'scheduled'
+        type: String,
+        enum: ['scheduled', 'in_progress', 'completed', 'cancelled'],
+        default: 'scheduled'
     },
     scheduled_date: {
-        type: DataTypes.DATE,
-        allowNull: false
+        type: Date,
+        required: true
     },
     completed_date: {
-        type: DataTypes.DATE
+        type: Date
     },
     cost: {
-        type: DataTypes.DECIMAL(10, 2)
+        type: Number
     },
     technician_notes: {
-        type: DataTypes.TEXT
+        type: String
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const Maintenance = mongoose.model('Maintenance', maintenanceSchema);
 
 module.exports = Maintenance;

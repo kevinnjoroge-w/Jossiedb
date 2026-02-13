@@ -1,33 +1,59 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const CheckOut = sequelize.define('CheckOut', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const checkoutSchema = new mongoose.Schema({
     quantity: {
-        type: DataTypes.INTEGER,
-        defaultValue: 1
+        type: Number,
+        default: 1
     },
     checkout_date: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        default: Date.now
     },
     expected_return_date: {
-        type: DataTypes.DATE
+        type: Date
     },
     actual_return_date: {
-        type: DataTypes.DATE
+        type: Date
     },
     status: {
-        type: DataTypes.ENUM('active', 'returned', 'overdue', 'lost'),
-        defaultValue: 'active'
+        type: String,
+        enum: ['active', 'returned', 'overdue', 'lost'],
+        default: 'active'
+    },
+    destination_location_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Location'
+    },
+    item_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Item',
+        required: true
+    },
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    project_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project'
+    },
+    approved_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    location_note: {
+        type: String
     },
     notes: {
-        type: DataTypes.TEXT
+        type: String
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const CheckOut = mongoose.model('CheckOut', checkoutSchema);
 
 module.exports = CheckOut;

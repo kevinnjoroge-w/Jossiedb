@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const TransactionService = require('../services/TransactionService');
-const { authenticate } = require('../middlewares/authMiddleware');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
+const { locationFilter } = require('../middlewares/locationFilterMiddleware');
 
 router.use(authenticate);
 
-router.post('/checkout', async (req, res, next) => {
+// Checkout item (admin, supervisor, foreman, worker)
+router.post('/checkout', authorize(['admin', 'supervisor', 'foreman', 'worker']), locationFilter, async (req, res, next) => {
     try {
         const checkout = await TransactionService.checkoutItem(req.body, req.user.id);
         res.status(201).json(checkout);
@@ -14,9 +16,12 @@ router.post('/checkout', async (req, res, next) => {
     }
 });
 
-router.post('/:id/checkin', async (req, res, next) => {
+// Checkin item (admin, supervisor, foreman, worker - but workers only their own)
+router.post('/:id/checkin', locationFilter, async (req, res, next) => {
     try {
-        const result = await TransactionService.checkinItem(req.params.id, req.body);
+        // Add user_id to returnData for location history tracking
+        const returnData = { ...req.body, user_id: req.user.id };
+        const result = await TransactionService.checkinItem(req.params.id, returnData);
         res.json(result);
     } catch (err) {
         res.status(400).json({ error: err.message });

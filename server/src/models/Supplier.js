@@ -1,30 +1,33 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Supplier = sequelize.define('Supplier', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const supplierSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true,
+        trim: true
     },
     contact_person: {
-        type: DataTypes.STRING
+        type: String
     },
     email: {
-        type: DataTypes.STRING,
-        validate: { isEmail: true }
+        type: String,
+        lowercase: true,
+        trim: true
     },
     phone: {
-        type: DataTypes.STRING
+        type: String
     },
     rating: {
-        type: DataTypes.INTEGER,
-        validate: { min: 1, max: 5 }
+        type: Number,
+        min: 1,
+        max: 5
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const Supplier = mongoose.model('Supplier', supplierSchema);
 
 module.exports = Supplier;

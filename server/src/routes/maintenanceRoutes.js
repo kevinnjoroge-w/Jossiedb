@@ -19,7 +19,7 @@ router.post('/', async (req, res, next) => {
         const record = await MaintenanceService.scheduleMaintenance(req.body);
         res.status(201).json(record);
     } catch (err) {
-        next(err);
+        res.status(400).json({ error: err.message });
     }
 });
 

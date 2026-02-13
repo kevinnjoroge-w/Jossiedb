@@ -1,35 +1,37 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Project = sequelize.define('Project', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const projectSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true,
+        trim: true
     },
     description: {
-        type: DataTypes.TEXT
+        type: String
     },
     start_date: {
-        type: DataTypes.DATEONLY
+        type: Date
     },
     end_date: {
-        type: DataTypes.DATEONLY
+        type: Date
     },
     status: {
-        type: DataTypes.ENUM('planning', 'active', 'completed', 'on_hold', 'cancelled'),
-        defaultValue: 'planning'
+        type: String,
+        enum: ['planning', 'active', 'completed', 'on_hold', 'cancelled'],
+        default: 'planning'
     },
     budget: {
-        type: DataTypes.DECIMAL(12, 2)
+        type: Number
     },
     location: {
-        type: DataTypes.STRING
+        type: String
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const Project = mongoose.model('Project', projectSchema);
 
 module.exports = Project;

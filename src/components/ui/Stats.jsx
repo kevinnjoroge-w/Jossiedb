@@ -39,10 +39,10 @@ const Stats = ({
             <Card className="stat-card">
                 <div className="flex items-start justify-between relative z-10">
                     <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             {title}
                         </p>
-                        <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                        <p className="text-3xl font-bold text-slate-950 dark:text-white">
                             {value}
                         </p>
                         {trend && (
@@ -51,7 +51,7 @@ const Stats = ({
                                     }`}>
                                     {trend === 'up' ? '↑' : '↓'} {trendValue}
                                 </span>
-                                <span className="text-xs text-slate-500">vs last month</span>
+                                <span className="text-xs text-slate-600 dark:text-slate-400">vs last month</span>
                             </div>
                         )}
                     </div>

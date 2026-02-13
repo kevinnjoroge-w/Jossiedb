@@ -1,31 +1,47 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Location = sequelize.define('Location', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const locationSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
     },
     type: {
-        type: DataTypes.ENUM('warehouse', 'site', 'office', 'vehicle'),
-        defaultValue: 'warehouse'
+        type: String,
+        enum: ['warehouse', 'site', 'office', 'vehicle'],
+        default: 'warehouse'
     },
     address: {
-        type: DataTypes.STRING
+        type: String
     },
     capacity: {
-        type: DataTypes.INTEGER
+        type: Number
     },
     is_active: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
+        type: Boolean,
+        default: true
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+// Virtual for items at this location
+locationSchema.virtual('Items', {
+    ref: 'Item',
+    localField: '_id',
+    foreignField: 'location_id'
+});
+
+// Virtual for foremen assigned to this location via UserLocations
+locationSchema.virtual('foremen', {
+    ref: 'UserLocations',
+    localField: '_id',
+    foreignField: 'location_id'
+});
+
+const Location = mongoose.model('Location', locationSchema);
 
 module.exports = Location;

@@ -1,24 +1,23 @@
-const { Maintenance, Item, User } = require('../models');
-const { Op } = require('sequelize');
+const { Maintenance } = require('../models');
+const logger = require('../utils/logger');
 
 class MaintenanceService {
     async getMaintenanceRecords(filters = {}) {
         try {
-            const where = {};
-            if (filters.status) where.status = filters.status;
+            const query = {};
+            if (filters.status) query.status = filters.status;
 
-            const limit = filters.limit ? parseInt(filters.limit) : undefined;
+            const limit = filters.limit ? parseInt(filters.limit) : 0;
 
-            return await Maintenance.findAll({
-                where,
-                limit,
-                include: [
-                    { model: Item, attributes: ['name', 'sku'] },
-                    { model: User, as: 'technician', attributes: ['full_name'] }
-                ],
-                order: [['scheduled_date', 'ASC']]
-            });
+            const records = await Maintenance.find(query)
+                .populate('item_id', 'name sku')
+                .populate('technician_id', 'full_name')
+                .sort({ scheduled_date: 1 })
+                .limit(limit);
+
+            return records;
         } catch (error) {
+            logger.error('Get maintenance records error:', error);
             throw error;
         }
     }
@@ -27,6 +26,7 @@ class MaintenanceService {
         try {
             return await Maintenance.create(data);
         } catch (error) {
+            logger.error('Schedule maintenance error:', error);
             throw error;
         }
     }

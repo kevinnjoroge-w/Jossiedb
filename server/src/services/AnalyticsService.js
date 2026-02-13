@@ -1,9 +1,14 @@
-const { Item, CheckOut, Maintenance, Project, sequelize } = require('../models');
-const { Op } = require('sequelize');
+const { Item, CheckOut, Maintenance, Project } = require('../models');
+const logger = require('../utils/logger');
 
 class AnalyticsService {
-    async getSummary() {
+    async getSummary(locationIds = null) {
         try {
+            const query = {};
+            if (locationIds) {
+                query.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
             const [
                 totalItems,
                 lowStockItems,
@@ -11,11 +16,11 @@ class AnalyticsService {
                 activeProjects,
                 pendingMaintenance
             ] = await Promise.all([
-                Item.count(),
-                Item.count({ where: { quantity: { [Op.lte]: sequelize.col('min_quantity') } } }),
-                CheckOut.count({ where: { status: 'active' } }),
-                Project.count({ where: { status: 'active' } }),
-                Maintenance.count({ where: { status: { [Op.in]: ['scheduled', 'in_progress'] } } })
+                Item.countDocuments(query),
+                Item.countDocuments({ ...query, $expr: { $lte: ['$quantity', '$min_quantity'] } }),
+                CheckOut.countDocuments({ ...query, status: 'active' }),
+                Project.countDocuments({ status: 'active' }), // Projects are generally global? Or should they also be filtered?
+                Maintenance.countDocuments({ ...query, status: { $in: ['scheduled', 'in_progress'] } })
             ]);
 
             return {
@@ -26,20 +31,159 @@ class AnalyticsService {
                 pendingMaintenance
             };
         } catch (error) {
+            logger.error('Get analytics summary error:', error);
             throw error;
         }
     }
 
-    async getLowStockAlerts() {
+    async getLowStockAlerts(locationIds = null) {
         try {
-            return await Item.findAll({
-                where: {
-                    quantity: { [Op.lte]: sequelize.col('min_quantity') }
-                },
-                limit: 5,
-                order: [['quantity', 'ASC']]
-            });
+            const query = {};
+            if (locationIds) {
+                query.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+            return await Item.find({ ...query, $expr: { $lte: ['$quantity', '$min_quantity'] } })
+                .sort({ quantity: 1 })
+                .limit(5);
         } catch (error) {
+            logger.error('Get low stock alerts error:', error);
+            throw error;
+        }
+    }
+
+    async getInventoryByLocation(locationIds = null) {
+        try {
+            const match = {};
+            if (locationIds) {
+                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
+            const stats = await Item.aggregate([
+                { $match: match },
+                {
+                    $group: {
+                        _id: '$location_id',
+                        total_quantity: { $sum: '$quantity' },
+                        item_count: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'locations',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'location'
+                    }
+                },
+                { $unwind: { path: '$location', preserveNullAndEmptyArrays: true } },
+                { $sort: { total_quantity: -1 } }
+            ]);
+            return stats;
+        } catch (error) {
+            logger.error('Get inventory by location error:', error);
+            throw error;
+        }
+    }
+
+    async getInventoryByCategory(locationIds = null) {
+        try {
+            const match = {};
+            if (locationIds) {
+                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
+            const stats = await Item.aggregate([
+                { $match: match },
+                {
+                    $group: {
+                        _id: '$category_id',
+                        total_quantity: { $sum: '$quantity' },
+                        item_count: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'categories',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'category'
+                    }
+                },
+                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+                { $sort: { total_quantity: -1 } }
+            ]);
+            return stats;
+        } catch (error) {
+            logger.error('Get inventory by category error:', error);
+            throw error;
+        }
+    }
+
+    async getMostUsedItems(locationIds = null) {
+        try {
+            const match = {};
+            if (locationIds) {
+                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
+            const stats = await CheckOut.aggregate([
+                { $match: match },
+                {
+                    $group: {
+                        _id: '$item_id',
+                        checkout_count: { $sum: 1 },
+                        total_quantity_used: { $sum: '$quantity' }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'items',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'item'
+                    }
+                },
+                { $unwind: { path: '$item', preserveNullAndEmptyArrays: true } },
+                { $sort: { total_quantity_used: -1 } },
+                { $limit: 5 }
+            ]);
+            return stats;
+        } catch (error) {
+            logger.error('Get most used items error:', error);
+            throw error;
+        }
+    }
+
+    async getCostAnalysis(locationIds = null) {
+        try {
+            const match = {};
+            if (locationIds) {
+                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
+            const stats = await Item.aggregate([
+                { $match: match },
+                {
+                    $group: {
+                        _id: '$category_id',
+                        total_value: { $sum: { $multiply: ['$quantity', '$unit_cost'] } },
+                        item_count: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'categories',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'category'
+                    }
+                },
+                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+                { $sort: { total_value: -1 } }
+            ]);
+            return stats;
+        } catch (error) {
+            logger.error('Get cost analysis error:', error);
             throw error;
         }
     }

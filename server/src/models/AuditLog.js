@@ -1,33 +1,34 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const AuditLog = sequelize.define('AuditLog', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const auditLogSchema = new mongoose.Schema({
     action: {
-        type: DataTypes.STRING, // CREATE, UPDATE, DELETE, LOGIN, CHECKOUT
-        allowNull: false
+        type: String, // CREATE, UPDATE, DELETE, LOGIN, CHECKOUT
+        required: true
     },
     entity_type: {
-        type: DataTypes.STRING, // Item, User, Project
-        allowNull: false
+        type: String, // Item, User, Project
+        required: true
     },
     entity_id: {
-        type: DataTypes.UUID,
-        allowNull: false
+        type: mongoose.Schema.Types.Mixed, // Can be ObjectId or other ID
+        required: true
     },
     user_id: {
-        type: DataTypes.UUID
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     details: {
-        type: DataTypes.JSON // Flexible storage for change diffs
+        type: mongoose.Schema.Types.Mixed // Flexible storage for change diffs
     },
     ip_address: {
-        type: DataTypes.STRING
+        type: String
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 
 module.exports = AuditLog;

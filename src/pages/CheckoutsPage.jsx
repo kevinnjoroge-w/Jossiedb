@@ -1,33 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, ArrowRight, ArrowLeft, RefreshCw, X, Package, Calendar } from 'lucide-react';
+import { Plus, Search, X, Package } from 'lucide-react';
 import { transactionService } from '../services/transactionService';
 import { inventoryService } from '../services/inventoryService';
-import { projectService } from '../services/projectService';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
 const CheckoutsPage = () => {
+    const { hasPermission } = useAuth();
     const [checkouts, setCheckouts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [items, setItems] = useState([]);
-    const [projects, setProjects] = useState([]);
+    const [locations, setLocations] = useState([]);
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const [selectedCheckout, setSelectedCheckout] = useState(null);
+
+    const [returnFormData, setReturnFormData] = useState({
+        location_id: '',
+        location_note: '',
+        notes: ''
+    });
 
     const [formData, setFormData] = useState({
         item_id: '',
         project_id: '',
         quantity: 1,
         expected_return_date: '',
+        destination_location_id: '',
+        location_note: '',
         notes: ''
     });
 
     useEffect(() => {
         fetchCheckouts();
-        // Pre-fetch items and projects for the modal selector
+        // Pre-fetch items and locations for the modal selector
         fetchDropdowns();
     }, []);
 
@@ -45,17 +55,12 @@ const CheckoutsPage = () => {
 
     const fetchDropdowns = async () => {
         try {
-            const [itemsData, projectsData] = await Promise.all([
+            const [itemsData, locationsData] = await Promise.all([
                 inventoryService.getAllItems({ status: 'available' }),
-                // Assuming projectService exists or implemented
-                // If not implemented yet, we might need to skip or implement it. 
-                // I will assume I implement projectService next, but for now safe to fetch if I create it.
-                // Wait, I strictly ordered tasks. But to make this meaningful I need items.
-                // I'll fetch items. Projects I'll try, else empty.
-                Promise.resolve([]) // Placeholder for projects until ProjectService is ready
+                inventoryService.getLocations()
             ]);
             setItems(itemsData);
-            // setProjects(projectsData); 
+            setLocations(locationsData);
         } catch (error) {
             console.error('Failed to load dropdowns', error);
         }
@@ -68,17 +73,28 @@ const CheckoutsPage = () => {
             toast.success('Item checked out successfully');
             setIsModalOpen(false);
             fetchCheckouts();
-            setFormData({ item_id: '', project_id: '', quantity: 1, expected_return_date: '', notes: '' });
+            setFormData({ item_id: '', project_id: '', quantity: 1, expected_return_date: '', destination_location_id: '', location_note: '', notes: '' });
         } catch (error) {
             toast.error(error.response?.data?.error || 'Checkout failed');
         }
     };
 
-    const handleReturn = async (id) => {
-        if (!window.confirm('Confirm return of this item?')) return;
+    const handleReturnClick = (checkout) => {
+        setSelectedCheckout(checkout);
+        setReturnFormData({
+            location_id: checkout.Item?.location_id || '',
+            location_note: '',
+            notes: ''
+        });
+        setIsReturnModalOpen(true);
+    };
+
+    const handleReturnSubmit = async (e) => {
+        e.preventDefault();
         try {
-            await transactionService.checkinItem(id, { notes: 'Returned via web UI' });
+            await transactionService.checkinItem(selectedCheckout.id, returnFormData);
             toast.success('Item returned successfully');
+            setIsReturnModalOpen(false);
             fetchCheckouts();
         } catch (error) {
             toast.error('Return failed');
@@ -94,9 +110,11 @@ const CheckoutsPage = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-white">Checkouts & Returns</h1>
-                <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
-                    New Checkout
-                </Button>
+                {hasPermission('transactions:checkout') && (
+                    <Button onClick={() => setIsModalOpen(true)} icon={Plus}>
+                        New Checkout
+                    </Button>
+                )}
             </div>
 
             <div className="glass p-4 rounded-xl">
@@ -149,8 +167,8 @@ const CheckoutsPage = () => {
                                         </span>
                                     </td>
                                     <td className="p-4 text-right">
-                                        {checkout.status === 'active' && (
-                                            <Button size="sm" variant="secondary" onClick={() => handleReturn(checkout.id)}>
+                                        {checkout.status === 'active' && hasPermission('transactions:checkin') && (
+                                            <Button size="sm" variant="secondary" onClick={() => handleReturnClick(checkout)}>
                                                 Return
                                             </Button>
                                         )}
@@ -186,13 +204,83 @@ const CheckoutsPage = () => {
                                     </select>
                                 </div>
 
-                                <Input label="Quantity" type="number" min="1" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) })} required />
+                                <Input label="Quantity" type="number" min="1" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })} required />
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Destination Location</label>
+                                    <select
+                                        value={formData.destination_location_id}
+                                        onChange={e => setFormData({ ...formData, destination_location_id: e.target.value })}
+                                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500"
+                                    >
+                                        <option value="">-- Select Destination (Optional) --</option>
+                                        {locations.map(loc => (
+                                            <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 <Input label="Expected Return Date" type="date" value={formData.expected_return_date} onChange={e => setFormData({ ...formData, expected_return_date: e.target.value })} />
                                 <Input label="Notes / Project" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Project name or notes" />
 
                                 <div className="flex justify-end gap-3 mt-6">
                                     <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
                                     <Button type="submit">Complete Checkout</Button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Return Modal (Scenario 3) */}
+            <AnimatePresence>
+                {isReturnModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-white">Return Item</h2>
+                                <button onClick={() => setIsReturnModalOpen(false)}><X className="text-slate-400 hover:text-white" /></button>
+                            </div>
+                            <form onSubmit={handleReturnSubmit} className="space-y-4">
+                                <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700 mb-4">
+                                    <p className="text-sm text-slate-400">Returning:</p>
+                                    <p className="text-lg font-bold text-white">{selectedCheckout?.Item?.name}</p>
+                                    <p className="text-xs text-slate-500 mt-1">Checked out to: {selectedCheckout?.borrower?.full_name}</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">Confirm/Update Current Location</label>
+                                    <select
+                                        value={returnFormData.location_id}
+                                        onChange={e => setReturnFormData({ ...returnFormData, location_id: e.target.value })}
+                                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500"
+                                        required
+                                    >
+                                        <option value="">-- Select Current Location --</option>
+                                        {locations.map(loc => (
+                                            <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <Input
+                                    label="Location Notes"
+                                    value={returnFormData.location_note}
+                                    onChange={e => setReturnFormData({ ...returnFormData, location_note: e.target.value })}
+                                    placeholder="Any notes about the item's condition or specific placement"
+                                />
+
+                                <Input
+                                    label="General Notes"
+                                    value={returnFormData.notes}
+                                    onChange={e => setReturnFormData({ ...returnFormData, notes: e.target.value })}
+                                    placeholder="General return notes"
+                                />
+
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <Button type="button" variant="secondary" onClick={() => setIsReturnModalOpen(false)}>Cancel</Button>
+                                    <Button type="submit">Complete Return</Button>
                                 </div>
                             </form>
                         </motion.div>

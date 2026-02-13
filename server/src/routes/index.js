@@ -7,8 +7,8 @@ const transactionRoutes = require('./transactionRoutes');
 const projectRoutes = require('./projectRoutes');
 
 router.use('/auth', authRoutes);
-router.use('/auth', authRoutes);
 router.use('/items', inventoryRoutes);
+router.use('/transfers', require('./transferRoutes'));
 router.use('/checkouts', transactionRoutes);
 router.use('/projects', projectRoutes);
 router.use('/analytics', require('./analyticsRoutes'));

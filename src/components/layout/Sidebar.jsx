@@ -10,6 +10,7 @@ import {
     BarChart3,
     FileText,
     Users,
+    MapPin,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const Sidebar = () => {
         { path: '/maintenance', icon: Wrench, label: 'Maintenance', roles: ['all'] },
         { path: '/projects', icon: FolderKanban, label: 'Projects', roles: ['all'] },
         { path: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['all'] },
+        { path: '/locations', icon: MapPin, label: 'Locations', roles: ['admin', 'supervisor'] },
         { path: '/audit-logs', icon: FileText, label: 'Audit Logs', roles: ['admin', 'supervisor'] },
         { path: '/users', icon: Users, label: 'Users', roles: ['admin'] },
     ];

@@ -61,6 +61,26 @@ export const AuthProvider = ({ children }) => {
     const isSupervisor = () => hasRole(['admin', 'supervisor']);
     const isForeman = () => hasRole(['admin', 'supervisor', 'foreman']);
 
+    const permissions = {
+        'inventory:create': ['admin', 'supervisor'],
+        'inventory:edit': ['admin', 'supervisor'],
+        'inventory:delete': ['admin'],
+        'inventory:update_location': ['admin', 'supervisor', 'foreman'],
+        'inventory:view_history': ['admin', 'supervisor', 'foreman'],
+        'locations:manage': ['admin'],
+        'locations:view': ['admin', 'supervisor', 'foreman', 'worker', 'personnel'],
+        'transactions:checkout': ['admin', 'supervisor', 'foreman', 'worker'],
+        'transactions:checkin': ['admin', 'supervisor', 'foreman', 'worker'],
+        'users:manage': ['admin'],
+        'audit_logs:view': ['admin', 'supervisor']
+    };
+
+    const hasPermission = (permission) => {
+        if (!user) return false;
+        const allowedRoles = permissions[permission];
+        return allowedRoles ? allowedRoles.includes(user.role) : false;
+    };
+
     const value = {
         user,
         loading,
@@ -70,6 +90,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isSupervisor,
         isForeman,
+        hasPermission,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

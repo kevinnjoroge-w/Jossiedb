@@ -1,42 +1,18 @@
-const { Sequelize } = require('sequelize');
-const path = require('path');
+const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
-const env = process.env.NODE_ENV || 'development';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/jossiedb';
 
-let sequelize;
-
-if (process.env.DATABASE_URL) {
-    // Production PostgreSQL connection
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-        dialect: 'postgres',
-        protocol: 'postgres',
-        logging: (msg) => logger.debug(msg),
-        dialectOptions: {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            }
-        }
-    });
-} else {
-    // Development SQLite connection
-    sequelize = new Sequelize({
-        dialect: 'sqlite',
-        storage: path.join(__dirname, '../../jossiedb.sqlite'),
-        logging: (msg) => logger.debug(msg),
-    });
-}
-
-const testConnection = async () => {
+const connectDB = async () => {
     try {
-        await sequelize.authenticate();
-        logger.info('Database connection has been established successfully.');
+        const conn = await mongoose.connect(MONGODB_URI);
+        logger.info(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-        logger.error('Unable to connect to the database:', error);
+        logger.error(`Error: ${error.message}`);
+        process.exit(1);
     }
 };
 
-testConnection();
+connectDB();
 
-module.exports = sequelize;
+module.exports = mongoose;

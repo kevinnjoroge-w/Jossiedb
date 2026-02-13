@@ -1,22 +1,22 @@
 const { AuditLog, User } = require('../models');
+const logger = require('../utils/logger');
 
 class AuditService {
     async getLogs(filters = {}) {
         try {
-            const where = {};
-            if (filters.entity_type) where.entity_type = filters.entity_type;
-            if (filters.action) where.action = filters.action;
-            if (filters.user_id) where.user_id = filters.user_id;
+            const query = {};
+            if (filters.entity_type) query.entity_type = filters.entity_type;
+            if (filters.action) query.action = filters.action;
+            if (filters.user_id) query.user_id = filters.user_id;
 
-            return await AuditLog.findAll({
-                where,
-                include: [
-                    { model: User, attributes: ['username', 'full_name'] }
-                ],
-                order: [['createdAt', 'DESC']],
-                limit: filters.limit ? parseInt(filters.limit) : 100
-            });
+            const logs = await AuditLog.find(query)
+                .populate('user_id', 'username full_name')
+                .sort({ createdAt: -1 })
+                .limit(filters.limit ? parseInt(filters.limit) : 100);
+
+            return logs;
         } catch (error) {
+            logger.error('Get logs error:', error);
             throw error;
         }
     }

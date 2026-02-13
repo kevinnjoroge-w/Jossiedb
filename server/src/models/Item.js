@@ -1,55 +1,72 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Item = sequelize.define('Item', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const itemSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true,
+        trim: true
     },
     sku: {
-        type: DataTypes.STRING,
-        unique: true
+        type: String,
+        unique: true,
+        sparse: true // Allow multiple nulls/missing SKUs if needed, though they should be unique if present
     },
     serial_number: {
-        type: DataTypes.STRING,
-        unique: true
+        type: String,
+        unique: true,
+        sparse: true
     },
     description: {
-        type: DataTypes.TEXT
+        type: String
     },
     quantity: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+        type: Number,
+        default: 0
     },
     min_quantity: {
-        type: DataTypes.INTEGER,
-        defaultValue: 5
+        type: Number,
+        default: 5
     },
     unit_cost: {
-        type: DataTypes.DECIMAL(10, 2),
-        defaultValue: 0.00
+        type: Number,
+        default: 0
     },
     condition: {
-        type: DataTypes.ENUM('new', 'excellent', 'good', 'fair', 'poor', 'damaged'),
-        defaultValue: 'new'
+        type: String,
+        enum: ['new', 'excellent', 'good', 'fair', 'poor', 'damaged'],
+        default: 'new'
     },
     status: {
-        type: DataTypes.ENUM('available', 'checked_out', 'maintenance', 'retired', 'lost'),
-        defaultValue: 'available'
+        type: String,
+        enum: ['available', 'checked_out', 'maintenance', 'retired', 'lost'],
+        default: 'available'
     },
     purchase_date: {
-        type: DataTypes.DATEONLY
+        type: Date
     },
-    // Scalable JSONB field for dynamic attributes (specs, warranty info, etc.)
+    category_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category'
+    },
+    location_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Location'
+    },
+    supplier_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Supplier'
+    },
     attributes: {
-        type: DataTypes.JSON, // Use JSONB in Postgres, JSON in SQLite
-        defaultValue: {}
+        type: Map,
+        of: mongoose.Schema.Types.Mixed,
+        default: {}
     }
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
+
+const Item = mongoose.model('Item', itemSchema);
 
 module.exports = Item;

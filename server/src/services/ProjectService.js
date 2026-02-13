@@ -1,4 +1,4 @@
-const { Project, CheckOut, Item } = require('../models');
+const { Project } = require('../models');
 const logger = require('../utils/logger');
 
 class ProjectService {
@@ -13,31 +13,27 @@ class ProjectService {
 
     async getAllProjects(filters = {}) {
         try {
-            const where = {};
-            if (filters.status) where.status = filters.status;
+            const query = {};
+            if (filters.status) query.status = filters.status;
 
-            return await Project.findAll({
-                where,
-                order: [['start_date', 'DESC']]
-            });
+            return await Project.find(query).sort({ start_date: -1 });
         } catch (error) {
+            logger.error('Get all projects error:', error);
             throw error;
         }
     }
 
     async getProjectDetails(id) {
         try {
-            const project = await Project.findByPk(id, {
-                include: [
-                    {
-                        model: CheckOut,
-                        include: [{ model: Item, attributes: ['name'] }]
-                    }
-                ]
-            });
+            const project = await Project.findById(id)
+                .populate({
+                    path: 'checkouts',
+                    populate: { path: 'item_id', select: 'name' }
+                });
             if (!project) throw new Error('Project not found');
             return project;
         } catch (error) {
+            logger.error('Get project details error:', error);
             throw error;
         }
     }

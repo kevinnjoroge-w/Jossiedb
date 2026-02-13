@@ -19,7 +19,7 @@ router.post('/', authorize(['admin', 'supervisor']), async (req, res, next) => {
         const project = await ProjectService.createProject(req.body);
         res.status(201).json(project);
     } catch (err) {
-        next(err);
+        res.status(400).json({ error: err.message });
     }
 });
 

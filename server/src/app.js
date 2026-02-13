@@ -26,12 +26,16 @@ app.use('/api/v1', apiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+    console.error('SERVER ERROR:', err);
     logger.error(err.stack);
     res.status(500).json({
         error: 'Internal Server Error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
+
+const { mongoose } = require('./models');
 
 // Start server
 const PORT = process.env.PORT || 3002;

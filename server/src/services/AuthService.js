@@ -10,9 +10,7 @@ class AuthService {
         try {
             // Check if user exists
             const existingUser = await User.findOne({
-                where: {
-                    username: userData.username
-                }
+                username: userData.username
             });
 
             if (existingUser) {
@@ -26,7 +24,7 @@ class AuthService {
             const token = this.generateToken(user);
 
             // Return user without password
-            const userResponse = user.toJSON();
+            const userResponse = user.toObject();
             delete userResponse.password;
 
             return { user: userResponse, token };
@@ -38,7 +36,7 @@ class AuthService {
 
     async login(username, password) {
         try {
-            const user = await User.findOne({ where: { username } });
+            const user = await User.findOne({ username });
 
             if (!user || !(await user.validatePassword(password))) {
                 throw new Error('Invalid credentials');
@@ -49,7 +47,7 @@ class AuthService {
             await user.save();
 
             const token = this.generateToken(user);
-            const userResponse = user.toJSON();
+            const userResponse = user.toObject();
             delete userResponse.password;
 
             return { user: userResponse, token };
@@ -61,7 +59,7 @@ class AuthService {
 
     generateToken(user) {
         return jwt.sign(
-            { id: user.id, role: user.role, username: user.username },
+            { id: user._id, role: user.role, username: user.username },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );

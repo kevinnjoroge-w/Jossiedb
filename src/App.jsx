@@ -13,6 +13,8 @@ import CheckoutsPage from './pages/CheckoutsPage';
 import ProjectsPage from './pages/ProjectsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import LocationsPage from './pages/LocationsPage';
+import TransferRequestsPage from './pages/TransferRequestsPage';
 
 // Placeholder pages (we'll create these next)
 const MaintenancePage = () => <div className="text-2xl font-bold">Maintenance Page (Coming Soon)</div>;
@@ -79,6 +81,8 @@ function AppRoutes() {
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="locations" element={<LocationsPage />} />
+        <Route path="transfers" element={<TransferRequestsPage />} />
         <Route
           path="audit-logs"
           element={
