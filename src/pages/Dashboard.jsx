@@ -16,18 +16,32 @@ import Loading from '../components/ui/Loading';
 import Alert from '../components/ui/Alert';
 import { STATUS_COLORS } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 const Dashboard = () => {
     const { isAdmin } = useAuth();
     const [stats, setStats] = useState(null);
     const [lowStockItems, setLowStockItems] = useState([]);
-    const [recentCheckouts, setRecentCheckouts] = useState([]);
+    const [recentTransfers, setRecentTransfers] = useState([]);
     const [upcomingMaintenance, setUpcomingMaintenance] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const socket = useSocket();
 
     useEffect(() => {
         loadDashboardData();
     }, []);
+
+    useEffect(() => {
+        if (socket) {
+            socket.on('TRANSFER_UPDATED', (data) => {
+                console.log('Real-time event: TRANSFER_UPDATED', data);
+                loadDashboardData();
+            });
+
+            return () => socket.off('TRANSFER_UPDATED');
+        }
+    }, [socket]);
 
     const loadDashboardData = async () => {
         try {
@@ -40,13 +54,13 @@ const Dashboard = () => {
             ] = await Promise.all([
                 api.get('/analytics/summary'),
                 api.get('/analytics/low-stock-alerts'),
-                api.get('/checkouts?limit=5'),
+                api.get('/transfers?limit=5'),
                 api.get('/maintenance?status=scheduled&limit=5'),
             ]);
 
             setStats(analyticsRes.data);
             setLowStockItems(lowStockRes.data);
-            setRecentCheckouts(checkoutsRes.data);
+            setRecentTransfers(checkoutsRes.data);
             setUpcomingMaintenance(maintenanceRes.data);
         } catch (error) {
             console.error('Error loading dashboard data:', error);
@@ -92,8 +106,8 @@ const Dashboard = () => {
                     trendValue="12%"
                 />
                 <Stats
-                    title="Active Checkouts"
-                    value={formatNumber(stats?.activeCheckouts || 0)}
+                    title="Active Transfers"
+                    value={formatNumber(stats?.activeTransfers || 0)}
                     icon={ArrowRightLeft}
                     color="info"
                 />
@@ -112,10 +126,10 @@ const Dashboard = () => {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                Recent Checkouts
+                                Recent Transfers
                             </h3>
                             <a
-                                href="/checkouts"
+                                href="/transfers"
                                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                             >
                                 View all
@@ -123,31 +137,31 @@ const Dashboard = () => {
                         </div>
                     </CardHeader>
                     <CardBody>
-                        {recentCheckouts.length === 0 ? (
-                            <p className="text-center text-slate-500 py-8">No recent checkouts</p>
+                        {recentTransfers.length === 0 ? (
+                            <p className="text-center text-slate-500 py-8">No recent transfers</p>
                         ) : (
                             <div className="space-y-4">
-                                {recentCheckouts.map((checkout) => (
+                                {recentTransfers.map((transfer) => (
                                     <motion.div
-                                        key={checkout.id}
+                                        key={transfer.id}
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                     >
                                         <div className="flex-1">
                                             <p className="font-medium text-slate-900 dark:text-white">
-                                                {checkout.item?.name}
+                                                {transfer.Item?.name}
                                             </p>
                                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                                                Checked out to {checkout.checked_out_to_user?.full_name || checkout.checked_out_to_user?.username}
+                                                To {transfer.to_location?.name}
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <Badge variant={STATUS_COLORS[checkout.status]}>
-                                                {checkout.status.replace('_', ' ')}
+                                            <Badge variant={STATUS_COLORS[transfer.status] || 'info'}>
+                                                {transfer.status.replace('_', ' ')}
                                             </Badge>
                                             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                                                {formatRelativeTime(checkout.checkout_date)}
+                                                {formatRelativeTime(transfer.createdAt)}
                                             </p>
                                         </div>
                                     </motion.div>
@@ -227,9 +241,9 @@ const Dashboard = () => {
                             />
                         )}
                         <QuickActionButton
-                            href="/checkouts"
+                            href="/transfers"
                             icon={ArrowRightLeft}
-                            label="Check Out"
+                            label="Transfer Item"
                             color="from-green-500 to-green-600"
                         />
                         <QuickActionButton

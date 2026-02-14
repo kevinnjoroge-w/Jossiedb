@@ -1,7 +1,8 @@
-const { TransferRequest, Item, Location, LocationHistory } = require('../models');
+const { TransferRequest, Item, LocationHistory, User } = require('../models');
+const NotificationService = require('./NotificationService');
 const AuditService = require('./AuditService');
 const logger = require('../utils/logger');
-const mongoose = require('mongoose');
+const socketUtil = require('../utils/socket');
 
 class TransferService {
     async getAllTransfers(filters = {}) {
@@ -84,6 +85,19 @@ class TransferService {
 
             await AuditService.logAction('CREATE_TRANSFER', 'TransferRequest', transfer._id, requested_by, transferData);
 
+            // Notify all Admins and Supervisors
+            const adminsAndSupervisors = await User.find({ role: { $in: ['admin', 'supervisor'] } });
+            await Promise.all(adminsAndSupervisors.map(admin =>
+                NotificationService.createNotification({
+                    user_id: admin._id,
+                    type: 'transfer_request',
+                    title: 'New Transfer Request',
+                    message: `A new transfer request has been created for ${item.name} (${quantity} units).`,
+                    related_id: transfer._id,
+                    related_type: 'TransferRequest'
+                })
+            ));
+
             logger.info(`Transfer request created: ${transfer._id} for item ${item.name}`);
             return transfer;
         } catch (error) {
@@ -93,26 +107,32 @@ class TransferService {
     }
 
     async approveTransfer(id, approvedBy) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
         try {
-            const transfer = await TransferRequest.findById(id).session(session);
+            const transfer = await TransferRequest.findById(id);
             if (!transfer) throw new Error('Transfer request not found');
             if (transfer.status !== 'pending') throw new Error('Only pending requests can be approved');
 
             transfer.status = 'approved';
             transfer.approved_by = approvedBy;
-            await transfer.save({ session });
+            await transfer.save();
 
             await AuditService.logAction('APPROVE_TRANSFER', 'TransferRequest', transfer._id, approvedBy);
 
-            await session.commitTransaction();
-            session.endSession();
+            // Notify the requester
+            await NotificationService.createNotification({
+                user_id: transfer.requested_by,
+                type: 'transfer_approved',
+                title: 'Transfer Approved',
+                message: `Your transfer request for ${transfer.item_id.name} has been approved.`,
+                related_id: transfer._id,
+                related_type: 'TransferRequest'
+            });
+
+            socketUtil.emit('TRANSFER_UPDATED', { type: 'approve', transferId: id });
+
             logger.info(`Transfer request ${id} approved by ${approvedBy}`);
             return await this.getTransferById(id);
         } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
             logger.error('Approve transfer error:', error);
             throw error;
         }
@@ -131,6 +151,16 @@ class TransferService {
 
             await AuditService.logAction('REJECT_TRANSFER', 'TransferRequest', id, approvedBy, { reason });
 
+            // Notify the requester
+            await NotificationService.createNotification({
+                user_id: transfer.requested_by,
+                type: 'transfer_rejected',
+                title: 'Transfer Rejected',
+                message: `Your transfer request for ${transfer.item_id.name} was rejected. Reason: ${reason}`,
+                related_id: transfer._id,
+                related_type: 'TransferRequest'
+            });
+
             logger.info(`Transfer request ${id} rejected by ${approvedBy}`);
             return await this.getTransferById(id);
         } catch (error) {
@@ -140,21 +170,19 @@ class TransferService {
     }
 
     async completeTransfer(id) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
         try {
-            const transfer = await TransferRequest.findById(id).session(session);
+            const transfer = await TransferRequest.findById(id);
             if (!transfer) throw new Error('Transfer request not found');
             if (transfer.status !== 'approved' && transfer.status !== 'in_transit') {
                 throw new Error('Only approved or in-transit requests can be completed');
             }
 
-            const item = await Item.findById(transfer.item_id).session(session);
+            const item = await Item.findById(transfer.item_id);
             if (!item) throw new Error('Item not found');
 
             const oldLocationId = item.location_id;
             item.location_id = transfer.to_location_id;
-            await item.save({ session });
+            await item.save();
 
             await LocationHistory.create([{
                 item_id: transfer.item_id,
@@ -163,21 +191,19 @@ class TransferService {
                 changed_by: transfer.requested_by,
                 change_type: 'manual',
                 notes: `Transfer completed. Request ID: ${transfer._id}`
-            }], { session });
+            }]);
 
             transfer.status = 'completed';
             transfer.actual_arrival = new Date();
-            await transfer.save({ session });
+            await transfer.save();
 
             await AuditService.logAction('COMPLETE_TRANSFER', 'TransferRequest', transfer._id, transfer.requested_by);
 
-            await session.commitTransaction();
-            session.endSession();
+            socketUtil.emit('TRANSFER_UPDATED', { type: 'complete', transferId: id });
+
             logger.info(`Transfer ${id} completed. Item ${item.name} moved to ${transfer.to_location_id}`);
             return await this.getTransferById(id);
         } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
             logger.error('Complete transfer error:', error);
             throw error;
         }

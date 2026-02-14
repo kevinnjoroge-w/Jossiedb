@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const logger = require('./utils/logger');
+const socketUtil = require('./utils/socket');
 require('dotenv').config();
 
 // Initialize app
@@ -56,6 +57,9 @@ if (require.main === module) {
     const server = app.listen(PORT, () => {
         logger.info(`Server running on port ${PORT}`);
     });
+
+    // Initialize Socket.io
+    socketUtil.init(server);
 
     // Graceful shutdown
     const shutdown = () => {

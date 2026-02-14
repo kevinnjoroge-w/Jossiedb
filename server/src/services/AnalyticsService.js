@@ -1,4 +1,4 @@
-const { Item, CheckOut, Maintenance, Project } = require('../models');
+const { Item, CheckOut, Maintenance, Project, TransferRequest } = require('../models');
 const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 
@@ -6,8 +6,15 @@ class AnalyticsService {
     async getSummary(locationIds = null) {
         try {
             const query = {};
+            let itemIds = null;
+
             if (locationIds) {
-                query.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+                const objectIdLocationIds = locationIds.map(id => new mongoose.Types.ObjectId(id));
+                query.location_id = { $in: objectIdLocationIds };
+
+                // Get all items in these locations to filter related models
+                const items = await Item.find(query).select('_id');
+                itemIds = items.map(item => item._id);
             }
 
             let projectQuery = { status: 'active' };
@@ -18,24 +25,32 @@ class AnalyticsService {
                 projectQuery.location = { $in: locationNames };
             }
 
+            const relatedQuery = {};
+            if (itemIds) {
+                relatedQuery.item_id = { $in: itemIds };
+            }
+
             const [
                 totalItems,
                 lowStockItems,
-                checkedOutItems,
+                pendingTransfers,
+                activeTransfers,
                 activeProjects,
                 pendingMaintenance
             ] = await Promise.all([
                 Item.countDocuments(query),
                 Item.countDocuments({ ...query, $expr: { $lte: ['$quantity', '$min_quantity'] } }),
-                CheckOut.countDocuments({ ...query, status: 'active' }),
+                TransferRequest.countDocuments({ ...relatedQuery, status: 'pending' }),
+                TransferRequest.countDocuments({ ...relatedQuery, status: 'approved' }),
                 Project.countDocuments(projectQuery),
-                Maintenance.countDocuments({ ...query, status: { $in: ['scheduled', 'in_progress'] } })
+                Maintenance.countDocuments({ ...relatedQuery, status: { $in: ['scheduled', 'in_progress'] } })
             ]);
 
             return {
                 totalItems,
                 lowStockItems,
-                checkedOutItems,
+                pendingTransfers,
+                activeTransfers,
                 activeProjects,
                 pendingMaintenance
             };
@@ -130,13 +145,26 @@ class AnalyticsService {
 
     async getMostUsedItems(locationIds = null) {
         try {
-            const match = {};
+            const pipeline = [];
+
+            // If locationIds provided, lookup Item first and match location_id
             if (locationIds) {
-                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+                const objectIdLocationIds = locationIds.map(id => new mongoose.Types.ObjectId(id));
+                pipeline.push(
+                    {
+                        $lookup: {
+                            from: 'items',
+                            localField: 'item_id',
+                            foreignField: '_id',
+                            as: 'item_info'
+                        }
+                    },
+                    { $unwind: '$item_info' },
+                    { $match: { 'item_info.location_id': { $in: objectIdLocationIds } } }
+                );
             }
 
-            const stats = await CheckOut.aggregate([
-                { $match: match },
+            pipeline.push(
                 {
                     $group: {
                         _id: '$item_id',
@@ -155,7 +183,9 @@ class AnalyticsService {
                 { $unwind: { path: '$item', preserveNullAndEmptyArrays: true } },
                 { $sort: { total_quantity_used: -1 } },
                 { $limit: 5 }
-            ]);
+            );
+
+            const stats = await CheckOut.aggregate(pipeline);
             return stats;
         } catch (error) {
             logger.error('Get most used items error:', error);

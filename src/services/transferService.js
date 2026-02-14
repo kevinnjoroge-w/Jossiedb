@@ -1,7 +1,7 @@
 import api from '../utils/api';
 
 export const transferService = {
-    getAllTransfers: async (params = {}) => {
+    getTransferRequests: async (params = {}) => {
         const response = await api.get('/transfers', { params });
         return response.data;
     },

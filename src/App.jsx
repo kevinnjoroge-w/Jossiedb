@@ -9,12 +9,12 @@ import Loading from './components/ui/Loading';
 
 import UsersPage from './pages/UsersPage';
 import InventoryPage from './pages/InventoryPage';
-import CheckoutsPage from './pages/CheckoutsPage';
 import ProjectsPage from './pages/ProjectsPage';
+import { SocketProvider } from './context/SocketContext';
 import AnalyticsPage from './pages/AnalyticsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import LocationsPage from './pages/LocationsPage';
-import TransferRequestsPage from './pages/TransferRequestsPage';
+import TransfersPage from './pages/TransfersPage';
 import NotificationsPage from './pages/NotificationsPage';
 
 // Placeholder pages (we'll create these next)
@@ -79,12 +79,12 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="checkouts" element={<CheckoutsPage />} />
+        <Route path="transfers" element={<TransfersPage />} />
         <Route path="maintenance" element={<MaintenancePage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="locations" element={<LocationsPage />} />
-        <Route path="transfers" element={<TransferRequestsPage />} />
+        {/* Transfers already defined above */}
         <Route
           path="audit-logs"
           element={
@@ -109,36 +109,39 @@ function AppRoutes() {
   );
 }
 
+
 function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#1e293b',
-              color: '#fff',
-              borderRadius: '0.75rem',
-              padding: '1rem',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+      <SocketProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#1e293b',
+                color: '#fff',
+                borderRadius: '0.75rem',
+                padding: '1rem',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-      </AuthProvider>
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </AuthProvider>
+      </SocketProvider>
     </BrowserRouter>
   );
 }

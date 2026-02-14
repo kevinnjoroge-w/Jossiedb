@@ -1,10 +1,19 @@
 const Notification = require('../models/Notification');
 const logger = require('../utils/logger');
+const socketUtil = require('../utils/socket');
 
 class NotificationService {
     async createNotification(data) {
         try {
-            return await Notification.create(data);
+            const notification = await Notification.create(data);
+
+            // Emit real-time event
+            socketUtil.emit('NEW_NOTIFICATION', {
+                userId: notification.user_id,
+                title: notification.title
+            });
+
+            return notification;
         } catch (error) {
             logger.error('Error creating notification:', error);
             throw error;

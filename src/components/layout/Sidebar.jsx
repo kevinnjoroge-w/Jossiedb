@@ -25,7 +25,7 @@ const Sidebar = () => {
         { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['all'] },
         { path: '/notifications', icon: Bell, label: 'Notifications', roles: ['all'] },
         { path: '/inventory', icon: Package, label: 'Inventory', roles: ['all'] },
-        { path: '/checkouts', icon: ArrowRightLeft, label: 'Check-In/Out', roles: ['all'] },
+        { path: '/transfers', icon: ArrowRightLeft, label: 'Transfers', roles: ['all'] },
         { path: '/maintenance', icon: Wrench, label: 'Maintenance', roles: ['all'] },
         { path: '/projects', icon: FolderKanban, label: 'Projects', roles: ['all'] },
         { path: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['admin'] },

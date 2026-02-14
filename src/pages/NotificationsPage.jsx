@@ -7,6 +7,7 @@ import Card, { CardBody } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Loading from '../components/ui/Loading';
 import Badge from '../components/ui/Badge';
+import { useSocket } from '../context/SocketContext';
 import toast from 'react-hot-toast';
 
 const NotificationsPage = () => {
@@ -15,23 +16,38 @@ const NotificationsPage = () => {
     const [filter, setFilter] = useState('all'); // all, unread
     const [searchTerm, setSearchTerm] = useState('');
 
+    const socket = useSocket();
+
     const fetchNotifications = useCallback(async () => {
         try {
             setLoading(prev => (notifications.length === 0 ? true : prev));
-            const data = await notificationService.getAll({
-                is_read: filter === 'unread' ? false : undefined
-            });
+            // Note: In a real app, 'user' would come from useAuth
+            const data = await notificationService.getNotifications();
             setNotifications(data);
         } catch (error) {
             toast.error('Failed to load notifications');
         } finally {
             setLoading(false);
         }
-    }, [filter, notifications.length]);
+    }, [notifications.length]);
 
     useEffect(() => {
         fetchNotifications();
     }, [fetchNotifications]);
+
+    useEffect(() => {
+        if (socket) {
+            const handleUpdate = () => {
+                fetchNotifications();
+            };
+            socket.on('NEW_NOTIFICATION', handleUpdate);
+            socket.on('TRANSFER_UPDATED', handleUpdate);
+            return () => {
+                socket.off('NEW_NOTIFICATION', handleUpdate);
+                socket.off('TRANSFER_UPDATED', handleUpdate);
+            };
+        }
+    }, [socket, fetchNotifications]);
 
     const handleMarkAsRead = async (id) => {
         try {

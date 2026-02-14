@@ -1,4 +1,4 @@
-const { Location, User, Item } = require('../models');
+const { Item } = require('../models');
 
 const locationFilter = async (req, res, next) => {
     // Admins and Supervisors are not restricted

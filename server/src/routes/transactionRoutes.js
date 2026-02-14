@@ -28,9 +28,10 @@ router.post('/:id/checkin', locationFilter, async (req, res, next) => {
     }
 });
 
-router.get('/', async (req, res, next) => {
+router.get('/', locationFilter, async (req, res, next) => {
     try {
-        const transactions = await TransactionService.getCheckouts(req.query);
+        const filters = { ...req.query, locationIds: req.assignedLocationIds };
+        const transactions = await TransactionService.getCheckouts(filters);
         res.json(transactions);
     } catch (err) {
         next(err);

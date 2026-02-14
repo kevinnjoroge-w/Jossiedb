@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AnalyticsService = require('../services/AnalyticsService');
-const { authenticate, authorize } = require('../middlewares/authMiddleware');
+const { authenticate } = require('../middlewares/authMiddleware');
 const { locationFilter } = require('../middlewares/locationFilterMiddleware');
 
 router.use(authenticate);

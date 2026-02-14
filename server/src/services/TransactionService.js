@@ -1,7 +1,6 @@
-const { CheckOut, Item, User, Project } = require('../models');
+const { CheckOut, Item } = require('../models');
 const AuditService = require('./AuditService');
 const logger = require('../utils/logger');
-const mongoose = require('mongoose');
 
 class TransactionService {
     async checkoutItem(checkoutData, userId) {

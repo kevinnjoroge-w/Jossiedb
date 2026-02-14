@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const MaintenanceService = require('../services/MaintenanceService');
 const { authenticate } = require('../middlewares/authMiddleware');
+const { locationFilter } = require('../middlewares/locationFilterMiddleware');
 
 router.use(authenticate);
 
-router.get('/', async (req, res, next) => {
+router.get('/', locationFilter, async (req, res, next) => {
     try {
-        const records = await MaintenanceService.getMaintenanceRecords(req.query);
+        const filters = { ...req.query, locationIds: req.assignedLocationIds };
+        const records = await MaintenanceService.getMaintenanceRecords(filters);
         res.json(records);
     } catch (err) {
         next(err);
