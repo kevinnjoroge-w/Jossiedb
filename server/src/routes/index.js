@@ -16,5 +16,6 @@ router.use('/maintenance', require('./maintenanceRoutes'));
 router.use('/users', require('./userRoutes'));
 router.use('/audit', require('./auditRoutes'));
 router.use('/locations', require('./locationRoutes'));
+router.use('/notifications', require('./notificationRoutes'));
 
 module.exports = router;

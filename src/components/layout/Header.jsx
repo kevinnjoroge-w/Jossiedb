@@ -1,12 +1,30 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HardHat, LogOut, User, Bell } from 'lucide-react';
+import { HardHat, LogOut, Bell } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const [unreadCount, setUnreadCount] = React.useState(0);
+
+    React.useEffect(() => {
+        const fetchUnreadCount = async () => {
+            try {
+                const count = await notificationService.getUnreadCount();
+                setUnreadCount(count);
+            } catch (error) {
+                console.error('Failed to fetch unread count:', error);
+            }
+        };
+
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, []);
 
     const getRoleBadgeColor = (role) => {
         const colors = {
@@ -43,14 +61,22 @@ const Header = () => {
                     {/* Right Section */}
                     <div className="flex items-center gap-4">
                         {/* Notifications */}
-                        <motion.button
+                        <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         >
-                            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                        </motion.button>
+                            <NavLink
+                                to="/notifications"
+                                className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors block"
+                            >
+                                <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </span>
+                                )}
+                            </NavLink>
+                        </motion.div>
 
                         {/* User Info */}
                         <div className="flex items-center gap-3 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">

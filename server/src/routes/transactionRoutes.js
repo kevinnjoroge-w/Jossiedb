@@ -37,4 +37,14 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+// Authorize checkout (admin only)
+router.post('/:id/authorize', authorize(['admin']), async (req, res, next) => {
+    try {
+        const result = await TransactionService.authorizeCheckout(req.params.id, req.user.id);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 module.exports = router;

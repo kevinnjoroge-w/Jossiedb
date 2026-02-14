@@ -7,7 +7,7 @@ router.use(authenticate);
 
 router.get('/', async (req, res, next) => {
     try {
-        const projects = await ProjectService.getAllProjects(req.query);
+        const projects = await ProjectService.getAllProjects(req.user, req.query);
         res.json(projects);
     } catch (err) {
         next(err);

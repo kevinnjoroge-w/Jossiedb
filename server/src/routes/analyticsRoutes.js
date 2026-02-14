@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AnalyticsService = require('../services/AnalyticsService');
-const { authenticate } = require('../middlewares/authMiddleware');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const { locationFilter } = require('../middlewares/locationFilterMiddleware');
 
 router.use(authenticate);
@@ -46,15 +46,6 @@ router.get('/by-category', async (req, res, next) => {
 router.get('/most-used', async (req, res, next) => {
     try {
         const data = await AnalyticsService.getMostUsedItems(req.assignedLocationIds);
-        res.json(data);
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/cost-analysis', async (req, res, next) => {
-    try {
-        const data = await AnalyticsService.getCostAnalysis(req.assignedLocationIds);
         res.json(data);
     } catch (err) {
         next(err);

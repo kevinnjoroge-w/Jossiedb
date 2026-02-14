@@ -14,5 +14,10 @@ export const transactionService = {
     checkinItem: async (id, data) => {
         const response = await api.post(`/checkouts/${id}/checkin`, data);
         return response.data;
+    },
+
+    authorizeCheckout: async (id) => {
+        const response = await api.post(`/checkouts/${id}/authorize`);
+        return response.data;
     }
 };

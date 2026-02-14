@@ -6,6 +6,9 @@ class MaintenanceService {
         try {
             const query = {};
             if (filters.status) query.status = filters.status;
+            if (filters.locationIds) {
+                query.location_id = { $in: filters.locationIds };
+            }
 
             const limit = filters.limit ? parseInt(filters.limit) : 0;
 

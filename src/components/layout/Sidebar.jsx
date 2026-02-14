@@ -11,22 +11,24 @@ import {
     FileText,
     Users,
     MapPin,
+    Bell,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
-    const { user, isAdmin, isSupervisor } = useAuth();
+    const { isAdmin, isSupervisor } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
 
     const navItems = [
         { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['all'] },
+        { path: '/notifications', icon: Bell, label: 'Notifications', roles: ['all'] },
         { path: '/inventory', icon: Package, label: 'Inventory', roles: ['all'] },
         { path: '/checkouts', icon: ArrowRightLeft, label: 'Check-In/Out', roles: ['all'] },
         { path: '/maintenance', icon: Wrench, label: 'Maintenance', roles: ['all'] },
         { path: '/projects', icon: FolderKanban, label: 'Projects', roles: ['all'] },
-        { path: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['all'] },
+        { path: '/analytics', icon: BarChart3, label: 'Analytics', roles: ['admin'] },
         { path: '/locations', icon: MapPin, label: 'Locations', roles: ['admin', 'supervisor'] },
         { path: '/audit-logs', icon: FileText, label: 'Audit Logs', roles: ['admin', 'supervisor'] },
         { path: '/users', icon: Users, label: 'Users', roles: ['admin'] },

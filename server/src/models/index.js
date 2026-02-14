@@ -11,6 +11,7 @@ const AuditLog = require('./AuditLog');
 const LocationHistory = require('./LocationHistory');
 const TransferRequest = require('./TransferRequest');
 const UserLocations = require('./UserLocations');
+const Notification = require('./Notification');
 
 module.exports = {
     mongoose,
@@ -25,5 +26,6 @@ module.exports = {
     AuditLog,
     LocationHistory,
     TransferRequest,
-    UserLocations
+    UserLocations,
+    Notification
 };

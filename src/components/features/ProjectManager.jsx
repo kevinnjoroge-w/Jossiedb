@@ -79,23 +79,21 @@ function ProjectManager({ user, items, onRefresh }) {
             <div
               key={project.id}
               onClick={() => setSelectedProject(project)}
-              className={`card p-6 cursor-pointer transition-all border-l-4 ${
-                selectedProject?.id === project.id
+              className={`card p-6 cursor-pointer transition-all border-l-4 ${selectedProject?.id === project.id
                   ? 'border-l-blue-500 bg-slate-700 ring-2 ring-blue-500'
                   : 'border-l-slate-600 hover:bg-slate-700/50'
-              }`}
+                }`}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3 className="font-bold text-lg text-white">{project.name}</h3>
                   <p className="text-slate-400 text-sm mt-1">{project.location}</p>
                 </div>
-                <span className={`badge ${
-                  project.status === 'in_progress' ? 'badge-info' :
-                  project.status === 'planning' ? 'badge-warning' :
-                  project.status === 'on_hold' ? 'badge-primary' :
-                  'badge-success'
-                }`}>
+                <span className={`badge ${project.status === 'in_progress' ? 'badge-info' :
+                    project.status === 'planning' ? 'badge-warning' :
+                      project.status === 'on_hold' ? 'badge-primary' :
+                        'badge-success'
+                  }`}>
                   {project.status.replace('_', ' ')}
                 </span>
               </div>
@@ -103,7 +101,6 @@ function ProjectManager({ user, items, onRefresh }) {
                 <p>📅 <span className="text-slate-400">
                   {new Date(project.start_date).toLocaleDateString()} → {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'Ongoing'}
                 </span></p>
-                <p>💰 <span className="text-emerald-400 font-semibold">${project.budget}</span></p>
               </div>
             </div>
           ))}
@@ -181,7 +178,6 @@ function ProjectForm({ onSubmit, onCancel }) {
     location: '',
     start_date: '',
     end_date: '',
-    budget: '',
     status: 'planning',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -204,7 +200,7 @@ function ProjectForm({ onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="card p-6 bg-gradient-to-br from-slate-800 to-slate-700 border-blue-600">
       <h3 className="text-lg font-bold text-white mb-6">Create New Project</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <label className="block text-sm font-semibold text-slate-300 mb-2">📋 Project Name</label>
@@ -244,16 +240,6 @@ function ProjectForm({ onSubmit, onCancel }) {
             className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 focus:ring-2 focus:ring-blue-500"
             value={formData.end_date}
             onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-slate-300 mb-2">💰 Budget</label>
-          <input
-            type="number"
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 focus:ring-2 focus:ring-blue-500"
-            value={formData.budget}
-            onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-            placeholder="0.00"
           />
         </div>
         <div>

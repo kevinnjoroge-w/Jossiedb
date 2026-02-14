@@ -2,23 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Package,
-    DollarSign,
     ArrowRightLeft,
     Wrench,
     TrendingUp,
-    AlertTriangle,
     Clock
 } from 'lucide-react';
 import api from '../utils/api';
-import { formatCurrency, formatNumber, formatRelativeTime } from '../utils/formatters';
+import { formatNumber, formatRelativeTime } from '../utils/formatters';
 import Stats from '../components/ui/Stats';
 import Card, { CardHeader, CardBody } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Loading from '../components/ui/Loading';
 import Alert from '../components/ui/Alert';
 import { STATUS_COLORS } from '../utils/constants';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
+    const { isAdmin } = useAuth();
     const [stats, setStats] = useState(null);
     const [lowStockItems, setLowStockItems] = useState([]);
     const [recentCheckouts, setRecentCheckouts] = useState([]);
@@ -82,7 +82,7 @@ const Dashboard = () => {
             )}
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Stats
                     title="Total Items"
                     value={formatNumber(stats?.totalItems || 0)}
@@ -90,14 +90,6 @@ const Dashboard = () => {
                     color="primary"
                     trend="up"
                     trendValue="12%"
-                />
-                <Stats
-                    title="Total Value"
-                    value={formatCurrency(stats?.totalValue || 0)}
-                    icon={DollarSign}
-                    color="success"
-                    trend="up"
-                    trendValue="8%"
                 />
                 <Stats
                     title="Active Checkouts"
@@ -226,12 +218,14 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardBody>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <QuickActionButton
-                            href="/inventory"
-                            icon={Package}
-                            label="Add Item"
-                            color="from-blue-500 to-blue-600"
-                        />
+                        {isAdmin() && (
+                            <QuickActionButton
+                                href="/inventory"
+                                icon={Package}
+                                label="Add Item"
+                                color="from-blue-500 to-blue-600"
+                            />
+                        )}
                         <QuickActionButton
                             href="/checkouts"
                             icon={ArrowRightLeft}
@@ -244,12 +238,14 @@ const Dashboard = () => {
                             label="Schedule Maintenance"
                             color="from-yellow-500 to-yellow-600"
                         />
-                        <QuickActionButton
-                            href="/analytics"
-                            icon={TrendingUp}
-                            label="View Analytics"
-                            color="from-purple-500 to-purple-600"
-                        />
+                        {isAdmin() && (
+                            <QuickActionButton
+                                href="/analytics"
+                                icon={TrendingUp}
+                                label="View Analytics"
+                                color="from-purple-500 to-purple-600"
+                            />
+                        )}
                     </div>
                 </CardBody>
             </Card>

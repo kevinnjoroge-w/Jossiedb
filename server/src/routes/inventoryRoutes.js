@@ -37,7 +37,7 @@ router.post('/', authorize(['admin']), async (req, res, next) => {
     }
 });
 
-router.put('/:id', authorize(['admin', 'supervisor']), async (req, res, next) => {
+router.put('/:id', authorize(['admin']), async (req, res, next) => {
     try {
         const item = await InventoryService.updateItem(req.params.id, req.body);
         res.json(item);
@@ -47,7 +47,7 @@ router.put('/:id', authorize(['admin', 'supervisor']), async (req, res, next) =>
 });
 
 // Update item location manually (Scenario 1) - also restricted by locationFilter
-router.put('/:id/location', locationFilter, authorize(['admin', 'supervisor', 'foreman']), async (req, res, next) => {
+router.put('/:id/location', locationFilter, authorize(['admin']), async (req, res, next) => {
     try {
         const { location_id, notes } = req.body;
         const item = await InventoryService.updateItemLocation(

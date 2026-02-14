@@ -7,14 +7,12 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
-import { ArrowRightLeft, Filter, AlertTriangle } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 
 const InventoryPage = () => {
-    const { user, hasPermission } = useAuth();
-    const isAdmin = user?.role === 'admin';
+    const { hasPermission } = useAuth();
     const [items, setItems] = useState([]);
     const [locations, setLocations] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
@@ -25,7 +23,6 @@ const InventoryPage = () => {
         description: '',
         quantity: 0,
         min_quantity: 5,
-        unit_cost: 0,
         category_id: '',
         location_id: '',
         status: 'available'
@@ -57,13 +54,10 @@ const InventoryPage = () => {
 
     const fetchItems = async () => {
         try {
-            setLoading(true);
             const data = await inventoryService.getAllItems();
             setItems(data);
         } catch (error) {
             toast.error('Failed to load inventory');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -144,7 +138,7 @@ const InventoryPage = () => {
     const resetForm = () => {
         setCurrentItem(null);
         setFormData({
-            name: '', sku: '', description: '', quantity: 0, min_quantity: 5, unit_cost: 0, location_name: '', status: 'available'
+            name: '', sku: '', description: '', quantity: 0, min_quantity: 5, location_name: '', status: 'available'
         });
     };
 
@@ -203,13 +197,9 @@ const InventoryPage = () => {
                         <p className="text-sm text-slate-400 mb-4">{item.sku}</p>
 
                         <div className="space-y-2 text-sm text-slate-300">
-                            <div className="flex justify-between">
+                            <div className="justify-between flex">
                                 <span>Status</span>
                                 <span className="capitalize">{item.status.replace('_', ' ')}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Value</span>
-                                <span>${item.unit_cost}</span>
                             </div>
                         </div>
 
@@ -310,7 +300,7 @@ const InventoryPage = () => {
                                     </div>
                                 </div>
 
-                                <Input label="Unit Cost" type="number" value={formData.unit_cost} onChange={e => setFormData({ ...formData, unit_cost: parseFloat(e.target.value) || 0 })} />
+
 
                                 <div className="flex justify-end gap-3 mt-6">
                                     <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>

@@ -1,5 +1,6 @@
 const { Item, CheckOut, Maintenance, Project } = require('../models');
 const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
 class AnalyticsService {
     async getSummary(locationIds = null) {
@@ -7,6 +8,14 @@ class AnalyticsService {
             const query = {};
             if (locationIds) {
                 query.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
+            }
+
+            let projectQuery = { status: 'active' };
+            if (locationIds) {
+                const { Location } = require('../models');
+                const locations = await Location.find({ _id: { $in: locationIds } });
+                const locationNames = locations.map(l => l.name);
+                projectQuery.location = { $in: locationNames };
             }
 
             const [
@@ -19,7 +28,7 @@ class AnalyticsService {
                 Item.countDocuments(query),
                 Item.countDocuments({ ...query, $expr: { $lte: ['$quantity', '$min_quantity'] } }),
                 CheckOut.countDocuments({ ...query, status: 'active' }),
-                Project.countDocuments({ status: 'active' }), // Projects are generally global? Or should they also be filtered?
+                Project.countDocuments(projectQuery),
                 Maintenance.countDocuments({ ...query, status: { $in: ['scheduled', 'in_progress'] } })
             ]);
 
@@ -150,40 +159,6 @@ class AnalyticsService {
             return stats;
         } catch (error) {
             logger.error('Get most used items error:', error);
-            throw error;
-        }
-    }
-
-    async getCostAnalysis(locationIds = null) {
-        try {
-            const match = {};
-            if (locationIds) {
-                match.location_id = { $in: locationIds.map(id => new mongoose.Types.ObjectId(id)) };
-            }
-
-            const stats = await Item.aggregate([
-                { $match: match },
-                {
-                    $group: {
-                        _id: '$category_id',
-                        total_value: { $sum: { $multiply: ['$quantity', '$unit_cost'] } },
-                        item_count: { $sum: 1 }
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'categories',
-                        localField: '_id',
-                        foreignField: '_id',
-                        as: 'category'
-                    }
-                },
-                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
-                { $sort: { total_value: -1 } }
-            ]);
-            return stats;
-        } catch (error) {
-            logger.error('Get cost analysis error:', error);
             throw error;
         }
     }

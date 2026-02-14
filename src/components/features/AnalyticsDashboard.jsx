@@ -6,7 +6,6 @@ function AnalyticsDashboard({ user }) {
   const [byLocation, setByLocation] = useState([]);
   const [byCategory, setByCategory] = useState([]);
   const [mostUsed, setMostUsed] = useState([]);
-  const [costAnalysis, setCostAnalysis] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,18 +14,16 @@ function AnalyticsDashboard({ user }) {
 
   const loadAnalytics = async () => {
     try {
-      const [summaryRes, locationRes, categoryRes, usedRes, costRes] = await Promise.all([
+      const [summaryRes, locationRes, categoryRes, usedRes] = await Promise.all([
         api.get('/analytics/summary'),
         api.get('/analytics/by-location'),
         api.get('/analytics/by-category'),
         api.get('/analytics/most-used'),
-        api.get('/analytics/cost-analysis'),
       ]);
       setSummary(summaryRes.data);
       setByLocation(locationRes.data);
       setByCategory(categoryRes.data);
       setMostUsed(usedRes.data);
-      setCostAnalysis(costRes.data);
     } catch (error) {
       console.error('Error loading analytics:', error);
     } finally {
@@ -55,10 +52,7 @@ function AnalyticsDashboard({ user }) {
             <p className="text-slate-300 text-sm font-medium">📦 Total Items</p>
             <p className="text-4xl font-bold text-blue-400 mt-2">{summary.totalItems}</p>
           </div>
-          <div className="card p-6 bg-gradient-to-br from-emerald-900/20 to-emerald-800/20 border-emerald-600">
-            <p className="text-slate-300 text-sm font-medium">💰 Total Value</p>
-            <p className="text-4xl font-bold text-emerald-400 mt-2">${summary.totalValue?.toFixed(2) || '0.00'}</p>
-          </div>
+
           <div className="card p-6 bg-gradient-to-br from-red-900/20 to-red-800/20 border-red-600">
             <p className="text-slate-300 text-sm font-medium">⚠️ Low Stock</p>
             <p className="text-4xl font-bold text-red-400 mt-2">{summary.lowStockCount}</p>
@@ -143,37 +137,6 @@ function AnalyticsDashboard({ user }) {
         )}
       </div>
 
-      {/* Cost Analysis */}
-      <div className="card p-6">
-        <h3 className="text-lg font-bold text-white mb-4">💵 Cost Analysis by Category</h3>
-        {costAnalysis.length === 0 ? (
-          <p className="text-slate-300 text-center py-8">No cost data available</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-800 border-b border-slate-700">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase">Category</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase">Item Count</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase">Total Value</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700">
-                {costAnalysis.map((cat, idx) => {
-                  const totalValue = parseFloat(cat.total_value || 0);
-                  return (
-                    <tr key={idx} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-medium text-white">{cat.category?.name}</td>
-                      <td className="px-6 py-4 text-sm text-slate-300">{cat.item_count}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-emerald-400">${totalValue.toFixed(2)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

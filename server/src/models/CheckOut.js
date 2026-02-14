@@ -17,7 +17,7 @@ const checkoutSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'returned', 'overdue', 'lost'],
+        enum: ['active', 'returned', 'overdue', 'lost', 'pending_authorization'],
         default: 'active'
     },
     destination_location_id: {

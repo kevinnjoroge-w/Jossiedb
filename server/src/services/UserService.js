@@ -68,10 +68,10 @@ class UserService {
             if (!user) throw new Error('User not found');
 
             // Handle password update if provided
-            if (data.password) {
+            if (data.password && data.password.trim() !== '') {
                 user.password = data.password;
-                delete data.password;
             }
+            delete data.password;
 
             user.set(data);
             await user.save();

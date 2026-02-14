@@ -27,10 +27,6 @@ const itemSchema = new mongoose.Schema({
         type: Number,
         default: 5
     },
-    unit_cost: {
-        type: Number,
-        default: 0
-    },
     condition: {
         type: String,
         enum: ['new', 'excellent', 'good', 'fair', 'poor', 'damaged'],

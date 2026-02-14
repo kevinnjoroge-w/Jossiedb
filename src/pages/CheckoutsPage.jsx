@@ -9,7 +9,7 @@ import Input from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
 const CheckoutsPage = () => {
-    const { hasPermission } = useAuth();
+    const { hasPermission, isAdmin } = useAuth();
     const [checkouts, setCheckouts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -89,6 +89,16 @@ const CheckoutsPage = () => {
         setIsReturnModalOpen(true);
     };
 
+    const handleAuthorize = async (checkoutId) => {
+        try {
+            await transactionService.authorizeCheckout(checkoutId);
+            toast.success('Checkout authorized successfully');
+            fetchCheckouts();
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Authorization failed');
+        }
+    };
+
     const handleReturnSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -161,12 +171,20 @@ const CheckoutsPage = () => {
                                         {new Date(checkout.checkout_date).toLocaleDateString()}
                                     </td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-medium ${checkout.status === 'active' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-green-500/10 text-green-500'
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${checkout.status === 'active' ? 'bg-yellow-500/10 text-yellow-500' :
+                                            checkout.status === 'pending_authorization' ? 'bg-blue-500/10 text-blue-500' :
+                                                'bg-green-500/10 text-green-500'
                                             }`}>
-                                            {checkout.status === 'active' ? 'Checked Out' : 'Returned'}
+                                            {checkout.status === 'active' ? 'Checked Out' :
+                                                checkout.status === 'pending_authorization' ? 'Pending Approval' : 'Returned'}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-right">
+                                    <td className="p-4 text-right space-x-2">
+                                        {checkout.status === 'pending_authorization' && isAdmin() && (
+                                            <Button size="sm" variant="primary" onClick={() => handleAuthorize(checkout.id)}>
+                                                Authorize
+                                            </Button>
+                                        )}
                                         {checkout.status === 'active' && hasPermission('transactions:checkin') && (
                                             <Button size="sm" variant="secondary" onClick={() => handleReturnClick(checkout)}>
                                                 Return

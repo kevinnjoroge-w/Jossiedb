@@ -20,9 +20,6 @@ const projectSchema = new mongoose.Schema({
         enum: ['planning', 'active', 'completed', 'on_hold', 'cancelled'],
         default: 'planning'
     },
-    budget: {
-        type: Number
-    },
     location: {
         type: String
     }

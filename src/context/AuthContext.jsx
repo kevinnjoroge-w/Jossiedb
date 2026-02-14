@@ -1,30 +1,60 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+// Helper to safely parse stored user
+const getStoredUser = () => {
+    try {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        return null;
+    }
+};
 
-    useEffect(() => {
-        checkAuth();
+export const AuthProvider = ({ children }) => {
+    // Initialize user instantly from localStorage — no network wait
+    const [user, setUser] = useState(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return null;
+        return getStoredUser();
+    });
+    const [loading, setLoading] = useState(() => {
+        // Only show loading if we have a token but need to validate it
+        const token = localStorage.getItem('token');
+        return !!token;
+    });
+
+    const clearAuth = useCallback(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
     }, []);
 
-    const checkAuth = async () => {
+    // Background validation — doesn't block the UI
+    useEffect(() => {
         const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const response = await api.get('/auth/profile');
-                setUser(response.data.user);
-            } catch (error) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-            }
+        if (!token) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
-    };
+
+        // Validate token in the background
+        api.get('/auth/profile')
+            .then((response) => {
+                const freshUser = response.data.user;
+                setUser(freshUser);
+                localStorage.setItem('user', JSON.stringify(freshUser));
+            })
+            .catch(() => {
+                clearAuth();
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [clearAuth]);
 
     const login = async (username, password) => {
         try {
@@ -43,9 +73,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+        clearAuth();
         toast.success('Logged out successfully');
     };
 
@@ -62,17 +90,17 @@ export const AuthProvider = ({ children }) => {
     const isForeman = () => hasRole(['admin', 'supervisor', 'foreman']);
 
     const permissions = {
-        'inventory:create': ['admin', 'supervisor'],
-        'inventory:edit': ['admin', 'supervisor'],
+        'inventory:create': ['admin'],
+        'inventory:edit': ['admin'],
         'inventory:delete': ['admin'],
-        'inventory:update_location': ['admin', 'supervisor', 'foreman'],
+        'inventory:update_location': ['admin'],
         'inventory:view_history': ['admin', 'supervisor', 'foreman'],
         'locations:manage': ['admin'],
         'locations:view': ['admin', 'supervisor', 'foreman', 'worker', 'personnel'],
         'transactions:checkout': ['admin', 'supervisor', 'foreman', 'worker'],
         'transactions:checkin': ['admin', 'supervisor', 'foreman', 'worker'],
         'users:manage': ['admin'],
-        'audit_logs:view': ['admin', 'supervisor']
+        'audit_logs:view': ['admin']
     };
 
     const hasPermission = (permission) => {

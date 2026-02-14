@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: '/api/v1',
+    baseURL: 'http://localhost:3002/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -32,10 +32,14 @@ api.interceptors.response.use(
 
             // Handle specific error codes
             if (status === 401) {
+                // Don't redirect/toast for background auth checks (e.g. /auth/profile)
+                const isAuthCheck = error.config?.url?.includes('/auth/profile');
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                window.location.href = '/login';
-                toast.error('Session expired. Please login again.');
+                if (!isAuthCheck) {
+                    window.location.href = '/login';
+                    toast.error('Session expired. Please login again.');
+                }
             } else if (status === 403) {
                 toast.error('You do not have permission to perform this action.');
             } else if (status === 404) {

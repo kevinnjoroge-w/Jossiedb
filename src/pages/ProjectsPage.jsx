@@ -10,7 +10,6 @@ import toast from 'react-hot-toast';
 const ProjectsPage = () => {
     const { user } = useAuth();
     const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
@@ -19,7 +18,6 @@ const ProjectsPage = () => {
         location: '',
         start_date: '',
         end_date: '',
-        budget: '',
         status: 'planning'
     });
 
@@ -29,13 +27,10 @@ const ProjectsPage = () => {
 
     const fetchProjects = async () => {
         try {
-            setLoading(true);
             const data = await projectService.getAllProjects();
             setProjects(data);
         } catch (error) {
             toast.error('Failed to load projects');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -46,7 +41,7 @@ const ProjectsPage = () => {
             toast.success('Project created successfully');
             setIsModalOpen(false);
             fetchProjects();
-            setFormData({ name: '', description: '', location: '', start_date: '', end_date: '', budget: '', status: 'planning' });
+            setFormData({ name: '', description: '', location: '', start_date: '', end_date: '', status: 'planning' });
         } catch (error) {
             toast.error('Failed to create project');
         }
@@ -112,10 +107,6 @@ const ProjectsPage = () => {
                                 <Calendar className="w-4 h-4 text-slate-500" />
                                 <span>{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'TBD'}</span>
                             </div>
-                            <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center text-xs">
-                                <span className="text-slate-500">Budget</span>
-                                <span className="font-mono text-white">${Number(project.budget).toLocaleString()}</span>
-                            </div>
                         </div>
                     </motion.div>
                 ))}
@@ -136,7 +127,6 @@ const ProjectsPage = () => {
                                     <Input label="Start Date" type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} />
                                     <Input label="End Date" type="date" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} />
                                 </div>
-                                <Input label="Budget" type="number" value={formData.budget} onChange={e => setFormData({ ...formData, budget: e.target.value })} />
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">Status</label>

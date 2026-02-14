@@ -106,11 +106,10 @@ function EnhancedDashboard({ user, onLogout }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-4 font-medium text-sm whitespace-nowrap border-b-2 transition-all ${
-                  activeTab === tab.id
+                className={`px-4 py-4 font-medium text-sm whitespace-nowrap border-b-2 transition-all ${activeTab === tab.id
                     ? 'border-blue-500 text-blue-400 bg-slate-700/50'
                     : 'border-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-700/30'
-                }`}
+                  }`}
               >
                 <span className="mr-2">{tab.icon}</span>{tab.label}
               </button>
@@ -211,7 +210,6 @@ function InventoryTab({ items, locations, categories, suppliers, user, onRefresh
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase">Quantity</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase">Location</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase">Cost/Unit</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase">Condition</th>
               </tr>
             </thead>
@@ -227,16 +225,14 @@ function InventoryTab({ items, locations, categories, suppliers, user, onRefresh
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-300">{item.location?.name}</td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`badge ${
-                      item.status === 'active' ? 'badge-success' :
-                      item.status === 'under_maintenance' ? 'badge-warning' :
-                      item.status === 'damaged' ? 'badge-danger' :
-                      'badge-info'
-                    }`}>
+                    <span className={`badge ${item.status === 'active' ? 'badge-success' :
+                        item.status === 'under_maintenance' ? 'badge-warning' :
+                          item.status === 'damaged' ? 'badge-danger' :
+                            'badge-info'
+                      }`}>
                       {item.status.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-300 font-medium">${item.unit_cost}</td>
                   <td className="px-6 py-4 text-sm text-slate-300">{item.condition}</td>
                 </tr>
               ))}
