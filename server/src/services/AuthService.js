@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User, SessionLog } = require('../models');
 const logger = require('../utils/logger');
+const WebhookService = require('./WebhookService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
@@ -73,6 +74,17 @@ class AuthService {
             const userResponse = user.toObject();
             delete userResponse.password;
 
+            // Trigger webhook for user login
+            const clientInfo = req ? getClientInfo(req) : {};
+            await WebhookService.triggerWebhookEvent('user-login', {
+                userId: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                ...clientInfo,
+                timestamp: new Date().toISOString()
+            });
+
             return { user: userResponse, token };
         } catch (error) {
             logger.error('Login error:', error);
@@ -130,6 +142,18 @@ class AuthService {
             if (userId && sessionId) {
                 await SessionLog.logoutSession(sessionId);
                 logger.info(`Session logged out`, { sessionId, userId });
+
+                // Trigger webhook for user logout
+                const user = await User.findById(userId);
+                if (user) {
+                    await WebhookService.triggerWebhookEvent('user-logout', {
+                        userId: user._id,
+                        username: user.username,
+                        email: user.email,
+                        role: user.role,
+                        timestamp: new Date().toISOString()
+                    });
+                }
             }
 
             // Destroy session

@@ -1,6 +1,7 @@
 const { TransferRequest, Item, LocationHistory, User } = require('../models');
 const NotificationService = require('./NotificationService');
 const AuditService = require('./AuditService');
+const WebhookService = require('./WebhookService');
 const logger = require('../utils/logger');
 const socketUtil = require('../utils/socket');
 
@@ -99,6 +100,19 @@ class TransferService {
             ));
 
             logger.info(`Transfer request created: ${transfer._id} for item ${item.name}`);
+
+            // Trigger webhook for transfer approval needed
+            await WebhookService.triggerWebhookEvent('transfer-approval-needed', {
+                transferId: transfer._id,
+                itemId: transfer.item_id,
+                quantity: transfer.quantity,
+                fromLocation: transfer.from_location_id,
+                toLocation: transfer.to_location_id,
+                requestedBy: transfer.requested_by,
+                reason: transfer.reason,
+                status: transfer.status
+            });
+
             return transfer;
         } catch (error) {
             logger.error('Create transfer request error:', error);
@@ -129,6 +143,18 @@ class TransferService {
             });
 
             socketUtil.emit('TRANSFER_UPDATED', { type: 'approve', transferId: id });
+
+            // Trigger webhook for transfer approved
+            await WebhookService.triggerWebhookEvent('transfer-approved', {
+                transferId: transfer._id,
+                itemId: transfer.item_id,
+                quantity: transfer.quantity,
+                fromLocation: transfer.from_location_id,
+                toLocation: transfer.to_location_id,
+                requestedBy: transfer.requested_by,
+                approvedBy,
+                status: transfer.status
+            });
 
             logger.info(`Transfer request ${id} approved by ${approvedBy}`);
             return await this.getTransferById(id);
@@ -162,6 +188,20 @@ class TransferService {
             });
 
             logger.info(`Transfer request ${id} rejected by ${approvedBy}`);
+
+            // Trigger webhook for transfer rejected
+            await WebhookService.triggerWebhookEvent('transfer-rejected', {
+                transferId: transfer._id,
+                itemId: transfer.item_id,
+                quantity: transfer.quantity,
+                fromLocation: transfer.from_location_id,
+                toLocation: transfer.to_location_id,
+                requestedBy: transfer.requested_by,
+                rejectedBy: approvedBy,
+                reason,
+                status: transfer.status
+            });
+
             return await this.getTransferById(id);
         } catch (error) {
             logger.error('Reject transfer error:', error);

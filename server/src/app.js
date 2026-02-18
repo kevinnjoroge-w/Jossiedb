@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const logger = require('./utils/logger');
 const socketUtil = require('./utils/socket');
+const cache = require('./utils/cache');
 const { createSessionMiddleware, validateSession } = require('./config/session');
 const { sessionActivityLogger, initializeSessionCleanup } = require('./utils/sessionManager');
 require('dotenv').config();
@@ -64,8 +65,15 @@ process.on('uncaughtException', (error) => {
 // Start server
 const PORT = process.env.PORT || 3002;
 if (require.main === module) {
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, async () => {
         logger.info(`Server running on port ${PORT}`);
+        
+        // Initialize cache (Redis)
+        try {
+            await cache.initializeRedis();
+        } catch (err) {
+            logger.warn('Cache initialization failed, continuing without cache:', err.message);
+        }
         
         // Initialize session cleanup scheduler
         initializeSessionCleanup();
@@ -75,8 +83,12 @@ if (require.main === module) {
     socketUtil.init(server);
 
     // Graceful shutdown
-    const shutdown = () => {
+    const shutdown = async () => {
         logger.info('Shutting down server...');
+        
+        // Close cache connection
+        await cache.close();
+        
         server.close(() => {
             logger.info('Server closed');
             mongoose.connection.close(false, () => {

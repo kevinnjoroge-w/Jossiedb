@@ -17,5 +17,6 @@ router.use('/users', require('./userRoutes'));
 router.use('/audit', require('./auditRoutes'));
 router.use('/locations', require('./locationRoutes'));
 router.use('/notifications', require('./notificationRoutes'));
+router.use('/webhooks', require('./webhookRoutes'));
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const { CheckOut, Item } = require('../models');
 const AuditService = require('./AuditService');
+const WebhookService = require('./WebhookService');
 const logger = require('../utils/logger');
 
 class TransactionService {
@@ -54,6 +55,19 @@ class TransactionService {
                 quantity: checkoutData.quantity,
                 status: status,
                 is_authorized: isAdmin
+            });
+
+            // Trigger webhook for item checkout
+            await WebhookService.triggerWebhookEvent('item-checkout', {
+                checkoutId: checkout._id,
+                itemId: checkout.item_id,
+                quantity: checkout.quantity,
+                userId: checkout.user_id,
+                status: checkout.status,
+                destinationLocation: checkout.destination_location_id,
+                projectId: checkout.project_id
+            }, {
+                locationId: item.location_id
             });
 
             return checkout;
@@ -170,6 +184,18 @@ class TransactionService {
             await AuditService.logAction('CHECKIN', 'Item', item._id, returnData.user_id || checkout.user_id, {
                 checkout_id: checkout._id,
                 location_id: returnData.location_id
+            });
+
+            // Trigger webhook for item checkin
+            await WebhookService.triggerWebhookEvent('item-checkin', {
+                checkoutId: checkout._id,
+                itemId: checkout.item_id,
+                quantity: checkout.quantity,
+                userId: checkout.user_id,
+                returnedBy: returnData.user_id || checkout.user_id,
+                returnLocation: returnData.location_id
+            }, {
+                locationId: item.location_id
             });
 
             // await session.commitTransaction();

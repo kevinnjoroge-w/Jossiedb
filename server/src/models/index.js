@@ -13,6 +13,8 @@ const TransferRequest = require('./TransferRequest');
 const UserLocations = require('./UserLocations');
 const Notification = require('./Notification');
 const SessionLog = require('./SessionLog');
+const Webhook = require('./Webhook');
+const WebhookEvent = require('./WebhookEvent');
 
 module.exports = {
     mongoose,
@@ -29,5 +31,7 @@ module.exports = {
     TransferRequest,
     UserLocations,
     Notification,
-    SessionLog
+    SessionLog,
+    Webhook,
+    WebhookEvent
 };
