@@ -162,7 +162,7 @@ const LocationsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredLocations.map((location, idx) => (
-                    <motion.div key={location.id || location._id || idx} layout className="glass p-6 rounded-xl relative group">
+                    <motion.div key={location.id || location._id || idx} layout className="glass p-6 rounded-xl relative group bg-slate-800/95">
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 bg-slate-800 rounded-lg">
                                 <MapPin className="w-6 h-6 text-primary-400" />
@@ -173,7 +173,7 @@ const LocationsPage = () => {
                                     {location.is_active ? 'Active' : 'Inactive'}
                                 </span>
                                 {location.item_count !== undefined && (
-                                    <span className="flex items-center gap-1 text-xs text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+                                    <span className="flex items-center gap-1 text-xs text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
                                         <Package className="w-3 h-3" />
                                         {location.item_count} items
                                     </span>
@@ -182,17 +182,17 @@ const LocationsPage = () => {
                         </div>
 
                         <h3 className="text-lg font-bold text-white mb-1">{location.name}</h3>
-                        <p className="text-sm text-slate-400 mb-4 capitalize">{location.type}</p>
+                        <p className="text-sm text-slate-100 mb-4 capitalize">{location.type}</p>
 
                         {location.address && (
-                            <p className="text-sm text-slate-300 mb-2">{location.address}</p>
+                            <p className="text-sm text-slate-100 mb-2">{location.address}</p>
                         )}
 
                         {location.capacity > 0 && (
                             <div className="space-y-2">
-                                <div className="flex justify-between text-xs text-slate-400">
+                                <div className="flex justify-between text-xs text-slate-100">
                                     <span>Occupancy</span>
-                                    <span>{location.current_occupancy || 0} / {location.capacity}</span>
+                                    <span className="font-semibold text-white">{location.current_occupancy || 0} / {location.capacity}</span>
                                 </div>
                                 <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                                     <div
@@ -210,7 +210,7 @@ const LocationsPage = () => {
 
                         <div className="mt-4 pt-4 border-t border-slate-700/50">
                             <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                                <h4 className="text-xs font-semibold text-slate-100 flex items-center gap-1">
                                     <Users className="w-3 h-3" /> Foremen
                                 </h4>
                                 {isAdmin && (

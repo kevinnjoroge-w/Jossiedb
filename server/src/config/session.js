@@ -40,12 +40,6 @@ const sessionConfig = {
  */
 const createSessionMiddleware = () => {
     const middleware = session(sessionConfig);
-    
-    // Log session errors
-    middleware.on('error', (error) => {
-        logger.error('Session error:', error);
-    });
-    
     return middleware;
 };
 

@@ -147,15 +147,15 @@ const UsersPage = () => {
             </div>
 
             {/* Users Table */}
-            <div className="glass rounded-xl overflow-hidden">
+            <div className="glass rounded-xl overflow-hidden bg-slate-800/95">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-slate-700/50 bg-slate-800/30">
-                                <th className="p-4 text-slate-400 font-medium">User</th>
-                                <th className="p-4 text-slate-400 font-medium">Role</th>
-                                <th className="p-4 text-slate-400 font-medium">Assigned Locations</th>
-                                <th className="p-4 text-slate-400 font-medium text-right">Actions</th>
+                            <tr className="border-b border-slate-700/50 bg-slate-900/50">
+                                <th className="p-4 text-slate-100 font-medium">User</th>
+                                <th className="p-4 text-slate-100 font-medium">Role</th>
+                                <th className="p-4 text-slate-100 font-medium">Assigned Locations</th>
+                                <th className="p-4 text-slate-100 font-medium text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -168,7 +168,7 @@ const UsersPage = () => {
                                             </div>
                                             <div>
                                                 <p className="text-white font-medium">{user.full_name || user.username}</p>
-                                                <p className="text-sm text-slate-400">{user.email}</p>
+                                                <p className="text-sm text-slate-100">{user.email}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -184,12 +184,12 @@ const UsersPage = () => {
                                         <div className="flex flex-wrap gap-1">
                                             {user.assigned_locations?.length > 0 ? (
                                                 user.assigned_locations.map(loc => (
-                                                    <span key={loc._id || loc.id} className="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">
+                                                    <span key={loc._id || loc.id} className="px-2 py-0.5 bg-slate-700 text-white rounded text-xs font-medium">
                                                         {loc.name}
                                                     </span>
                                                 ))
                                             ) : (
-                                                <span className="text-slate-500 text-xs italic">
+                                                <span className="text-slate-300 text-xs italic">
                                                     {user.role === 'admin' || user.role === 'supervisor' ? 'All Locations' : 'No Locations'}
                                                 </span>
                                             )}
@@ -197,10 +197,10 @@ const UsersPage = () => {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end space-x-2">
-                                            <button onClick={() => openEditModal(user)} className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">
+                                            <button onClick={() => openEditModal(user)} className="p-2 hover:bg-slate-700 rounded-lg text-slate-100 hover:text-white transition-colors">
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => handleDelete(user._id || user.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
+                                            <button onClick={() => handleDelete(user._id || user.id)} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-100 hover:text-red-500 transition-colors">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>

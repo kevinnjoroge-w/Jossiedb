@@ -22,7 +22,7 @@ const NotificationsPage = () => {
         try {
             setLoading(prev => (notifications.length === 0 ? true : prev));
             // Note: In a real app, 'user' would come from useAuth
-            const data = await notificationService.getNotifications();
+            const data = await notificationService.getAll();
             setNotifications(data);
         } catch (error) {
             toast.error('Failed to load notifications');

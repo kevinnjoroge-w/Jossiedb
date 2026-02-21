@@ -174,7 +174,7 @@ const InventoryPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.map((item, idx) => (
-                    <motion.div key={item.id || item._id || idx} layout className="glass p-6 rounded-xl relative group">
+                    <motion.div key={item.id || item._id || idx} layout className="glass p-6 rounded-xl relative group bg-slate-800/95">
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 bg-slate-800 rounded-lg">
                                 <Package className="w-6 h-6 text-primary-400" />
@@ -185,7 +185,7 @@ const InventoryPage = () => {
                                     {item.quantity} in stock
                                 </span>
                                 {item.Location && (
-                                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-slate-400 px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+                                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
                                         <MapPin className="w-3 h-3 text-primary-500" />
                                         {item.Location.name}
                                     </span>
@@ -194,12 +194,12 @@ const InventoryPage = () => {
                         </div>
 
                         <h3 className="text-lg font-bold text-white mb-1">{item.name}</h3>
-                        <p className="text-sm text-slate-400 mb-4">{item.sku}</p>
+                        <p className="text-sm text-slate-100 mb-4">{item.sku}</p>
 
-                        <div className="space-y-2 text-sm text-slate-300">
+                        <div className="space-y-2 text-sm text-slate-100">
                             <div className="justify-between flex">
                                 <span>Status</span>
-                                <span className="capitalize">{item.status.replace('_', ' ')}</span>
+                                <span className="capitalize font-semibold text-white">{item.status.replace('_', ' ')}</span>
                             </div>
                         </div>
 

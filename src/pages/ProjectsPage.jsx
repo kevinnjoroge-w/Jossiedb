@@ -85,7 +85,7 @@ const ProjectsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProjects.map(project => (
-                    <motion.div key={project.id} layout className="glass p-6 rounded-xl hover:bg-slate-800/50 transition-colors">
+                    <motion.div key={project.id} layout className="glass p-6 rounded-xl bg-slate-800/95 hover:bg-slate-800/80 transition-colors">
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 bg-slate-800 rounded-lg">
                                 <Briefcase className="w-6 h-6 text-primary-400" />
@@ -96,16 +96,16 @@ const ProjectsPage = () => {
                         </div>
 
                         <h3 className="text-lg font-bold text-white mb-2">{project.name}</h3>
-                        <p className="text-sm text-slate-400 mb-4 line-clamp-2">{project.description}</p>
+                        <p className="text-sm text-slate-100 mb-4 line-clamp-2">{project.description}</p>
 
-                        <div className="space-y-3 text-sm text-slate-300">
+                        <div className="space-y-3 text-sm text-slate-100">
                             <div className="flex items-center space-x-2">
-                                <MapPin className="w-4 h-4 text-slate-500" />
-                                <span>{project.location || 'No location set'}</span>
+                                <MapPin className="w-4 h-4 text-slate-400" />
+                                <span className="font-medium">{project.location || 'No location set'}</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Calendar className="w-4 h-4 text-slate-500" />
-                                <span>{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'TBD'}</span>
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span className="font-medium">{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'TBD'}</span>
                             </div>
                         </div>
                     </motion.div>

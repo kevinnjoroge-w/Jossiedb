@@ -100,7 +100,7 @@ const TransferRequestsPage = () => {
                             key={req.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass p-6 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-all group"
+                            className="glass p-6 rounded-xl bg-slate-800/95 border border-slate-700/50 hover:border-slate-600 transition-all group"
                         >
                             <div className="flex flex-col md:flex-row gap-6">
                                 <div className="flex-1 space-y-4">
@@ -112,9 +112,9 @@ const TransferRequestsPage = () => {
                                             <div>
                                                 <h3 className="text-lg font-bold text-white leading-none mb-1">
                                                     {req.Item?.name}
-                                                    <span className="ml-2 text-sm text-slate-400 font-normal">({req.quantity} units)</span>
+                                                    <span className="ml-2 text-sm text-slate-100 font-normal">({req.quantity} units)</span>
                                                 </h3>
-                                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                <p className="text-xs text-slate-200 flex items-center gap-1">
                                                     <Clock className="w-3 h-3" /> Requested {new Date(req.createdAt).toLocaleDateString()}
                                                 </p>
                                             </div>
@@ -129,20 +129,20 @@ const TransferRequestsPage = () => {
                                     </div>
 
                                     <div className="flex items-center gap-4 text-sm">
-                                        <div className="flex items-center gap-2 text-slate-300">
-                                            <MapPin className="w-4 h-4 text-slate-500" />
-                                            <span>{req.FromLocation?.name}</span>
+                                        <div className="flex items-center gap-2 text-slate-100">
+                                            <MapPin className="w-4 h-4 text-slate-400" />
+                                            <span className="font-medium">{req.FromLocation?.name}</span>
                                         </div>
                                         <ArrowRightLeft className="w-4 h-4 text-primary-500" />
-                                        <div className="flex items-center gap-2 text-slate-300">
-                                            <MapPin className="w-4 h-4 text-slate-500" />
-                                            <span>{req.ToLocation?.name}</span>
+                                        <div className="flex items-center gap-2 text-slate-100">
+                                            <MapPin className="w-4 h-4 text-slate-400" />
+                                            <span className="font-medium">{req.ToLocation?.name}</span>
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                        <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Reason</p>
-                                        <p className="text-sm text-slate-300">{req.reason}</p>
+                                    <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/50">
+                                        <p className="text-xs text-slate-200 uppercase font-semibold mb-1">Reason</p>
+                                        <p className="text-sm text-slate-100">{req.reason}</p>
                                     </div>
 
                                     {req.status === 'rejected' && req.rejection_reason && (
