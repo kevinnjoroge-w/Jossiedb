@@ -1,14 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HardHat, LogOut, Bell } from 'lucide-react';
+import { HardHat, LogOut, Bell, Moon, Sun } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { notificationService } from '../../services/notificationService';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const { isDarkMode, toggleTheme } = useTheme();
     const [unreadCount, setUnreadCount] = React.useState(0);
 
     React.useEffect(() => {
@@ -77,6 +79,21 @@ const Header = () => {
                                 )}
                             </NavLink>
                         </motion.div>
+
+                        {/* Theme Toggle */}
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={toggleTheme}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                        >
+                            {isDarkMode ? (
+                                <Sun className="w-5 h-5 text-amber-500" />
+                            ) : (
+                                <Moon className="w-5 h-5 text-slate-600" />
+                            )}
+                        </motion.button>
 
                         {/* User Info */}
                         <div className="flex items-center gap-3 px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">

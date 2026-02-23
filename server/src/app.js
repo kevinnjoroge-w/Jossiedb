@@ -65,6 +65,37 @@ process.on('uncaughtException', (error) => {
 // Start server
 const PORT = process.env.PORT || 3002;
 if (require.main === module) {
+    // Validate critical environment variables
+    const validateEnvVars = () => {
+        const SESSION_SECRET = process.env.SESSION_SECRET;
+        const SESSION_CRYPTO_SECRET = process.env.SESSION_CRYPTO_SECRET;
+        const JWT_SECRET = process.env.JWT_SECRET;
+
+        if (!SESSION_SECRET || SESSION_SECRET === 'your-session-secret-change-in-production') {
+            logger.error('CRITICAL: SESSION_SECRET not set or using default value');
+            process.exit(1);
+        }
+        
+        if (!SESSION_CRYPTO_SECRET || SESSION_CRYPTO_SECRET === 'session-crypto-secret') {
+            logger.error('CRITICAL: SESSION_CRYPTO_SECRET not set or using default value');
+            process.exit(1);
+        }
+
+        if (!JWT_SECRET || JWT_SECRET === 'your-secret-key-change-in-production') {
+            logger.error('CRITICAL: JWT_SECRET not set or using default value');
+            process.exit(1);
+        }
+
+        if (SESSION_SECRET === SESSION_CRYPTO_SECRET) {
+            logger.error('CRITICAL: SESSION_SECRET and SESSION_CRYPTO_SECRET must be different');
+            process.exit(1);
+        }
+
+        logger.info('All security secrets validated');
+    };
+
+    validateEnvVars();
+
     const server = app.listen(PORT, async () => {
         logger.info(`Server running on port ${PORT}`);
         

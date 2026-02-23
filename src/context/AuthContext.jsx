@@ -48,8 +48,12 @@ export const AuthProvider = ({ children }) => {
                 setUser(freshUser);
                 localStorage.setItem('user', JSON.stringify(freshUser));
             })
-            .catch(() => {
-                clearAuth();
+            .catch((error) => {
+                // Only clear auth on 401 (expired/invalid token), not on network errors
+                if (error.response?.status === 401) {
+                    clearAuth();
+                }
+                // For other errors (network, server), keep user logged in - they may retry
             })
             .finally(() => {
                 setLoading(false);

@@ -3,6 +3,7 @@ const router = express.Router();
 const AuthService = require('../services/AuthService');
 const Joi = require('joi');
 const { authenticate, requireSession } = require('../middlewares/authMiddleware');
+const { authLimiter } = require('../middlewares/rateLimitMiddleware');
 const { User } = require('../models');
 const logger = require('../utils/logger');
 
@@ -22,7 +23,7 @@ const loginSchema = Joi.object({
 /**
  * Register new user
  */
-router.post('/register', async (req, res, next) => {
+router.post('/register', authLimiter.middleware(), async (req, res, next) => {
     try {
         const { error } = registerSchema.validate(req.body);
         if (error) return res.status(400).json({ error: error.details[0].message });
@@ -43,7 +44,7 @@ router.post('/register', async (req, res, next) => {
  * Body: { username, password }
  * Returns: { user, token, sessionId }
  */
-router.post('/login', async (req, res, next) => {
+router.post('/login', authLimiter.middleware(), async (req, res, next) => {
     try {
         const { error } = loginSchema.validate(req.body);
         if (error) return res.status(400).json({ error: error.details[0].message });

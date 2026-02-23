@@ -6,8 +6,9 @@ let io;
 const init = (server) => {
     io = new Server(server, {
         cors: {
-            origin: '*', // Adjust this in production
-            methods: ['GET', 'POST']
+            origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // Secure CORS origin
+            methods: ['GET', 'POST'],
+            credentials: true
         }
     });
 

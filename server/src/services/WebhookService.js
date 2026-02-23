@@ -165,6 +165,7 @@ class WebhookService {
             logger.info(`Webhook event triggered: ${eventType} for ${webhooks.length} subscribers`);
         } catch (err) {
             logger.error('Error triggering webhook event:', err);
+            throw err; // Propagate error to caller
         }
     }
 

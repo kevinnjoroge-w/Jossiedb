@@ -61,6 +61,10 @@ class TransferService {
                 throw new Error('Missing required fields for transfer request');
             }
 
+            if (quantity <= 0) {
+                throw new Error('Quantity must be greater than 0');
+            }
+
             if (from_location_id.toString() === to_location_id.toString()) {
                 throw new Error('Source and destination locations must be different');
             }

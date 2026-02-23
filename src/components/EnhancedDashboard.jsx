@@ -21,18 +21,27 @@ function EnhancedDashboard({ user, onLogout }) {
 
   const loadData = async () => {
     try {
-      const [itemsRes, locationsRes, categoriesRes, suppliersRes, alertsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         axios.get('/api/items'),
         axios.get('/api/locations'),
         axios.get('/api/categories'),
         axios.get('/api/suppliers'),
         axios.get('/api/analytics/low-stock-alerts'),
       ]);
-      setItems(itemsRes.data);
-      setLocations(locationsRes.data);
-      setCategories(categoriesRes.data);
-      setSuppliers(suppliersRes.data);
-      setLowStockAlerts(alertsRes.data);
+
+      // Handle partial failures gracefully
+      if (results[0].status === 'fulfilled') setItems(results[0].value.data);
+      if (results[1].status === 'fulfilled') setLocations(results[1].value.data);
+      if (results[2].status === 'fulfilled') setCategories(results[2].value.data);
+      if (results[3].status === 'fulfilled') setSuppliers(results[3].value.data);
+      if (results[4].status === 'fulfilled') setLowStockAlerts(results[4].value.data);
+
+      // Log any failed requests
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.warn(`Failed to load data source ${index}:`, result.reason);
+        }
+      });
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
