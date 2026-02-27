@@ -17,9 +17,9 @@ import AuditLogsPage from './pages/AuditLogsPage';
 import LocationsPage from './pages/LocationsPage';
 import TransfersPage from './pages/TransfersPage';
 import NotificationsPage from './pages/NotificationsPage';
-
-// Placeholder pages (we'll create these next)
-const MaintenancePage = () => <div className="text-2xl font-bold">Maintenance Page (Coming Soon)</div>;
+import MaintenancePage from './pages/MaintenancePage';
+import ForemanDashboard from './pages/ForemanDashboard';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {
@@ -56,6 +56,8 @@ const PublicRoute = ({ children }) => {
 };
 
 function AppRoutes() {
+  const { user } = useAuth();
+
   return (
     <Routes>
       {/* Public Routes */}
@@ -77,20 +79,20 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="inventory" element={<InventoryPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="transfers" element={<TransfersPage />} />
-        <Route path="maintenance" element={<MaintenancePage />} />
-        <Route path="projects" element={<ProjectsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="locations" element={<LocationsPage />} />
+        <Route index element={<ErrorBoundary name="Dashboard">{user?.role === 'foreman' ? <ForemanDashboard /> : <Dashboard />}</ErrorBoundary>} />
+        <Route path="inventory" element={<ErrorBoundary name="Inventory"><InventoryPage /></ErrorBoundary>} />
+        <Route path="notifications" element={<ErrorBoundary name="Notifications"><NotificationsPage /></ErrorBoundary>} />
+        <Route path="transfers" element={<ErrorBoundary name="Transfers"><TransfersPage /></ErrorBoundary>} />
+        <Route path="maintenance" element={<ErrorBoundary name="Maintenance"><MaintenancePage /></ErrorBoundary>} />
+        <Route path="projects" element={<ErrorBoundary name="Projects"><ProjectsPage /></ErrorBoundary>} />
+        <Route path="analytics" element={<ErrorBoundary name="Analytics"><AnalyticsPage /></ErrorBoundary>} />
+        <Route path="locations" element={<ErrorBoundary name="Locations"><LocationsPage /></ErrorBoundary>} />
         {/* Transfers already defined above */}
         <Route
           path="audit-logs"
           element={
             <ProtectedRoute roles={['admin', 'supervisor']}>
-              <AuditLogsPage />
+              <ErrorBoundary name="Audit Logs"><AuditLogsPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -98,7 +100,7 @@ function AppRoutes() {
           path="users"
           element={
             <ProtectedRoute roles={['admin']}>
-              <UsersPage />
+              <ErrorBoundary name="Users"><UsersPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />

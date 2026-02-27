@@ -11,7 +11,8 @@ export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        const newSocket = io('http://localhost:3002');
+        const hostname = window.location.hostname;
+        const newSocket = io(`http://${hostname}:3002`);
         setSocket(newSocket);
 
         return () => newSocket.close();

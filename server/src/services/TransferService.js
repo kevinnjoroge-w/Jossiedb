@@ -74,9 +74,19 @@ class TransferService {
             if (item.location_id.toString() !== from_location_id.toString()) {
                 throw new Error('Item is not currently at the source location');
             }
-            if (item.quantity < quantity) {
-                throw new Error('Insufficient item quantity at source location');
+
+            // Check AVAILABLE quantity (total minus already-reserved units)
+            const available = item.quantity - (item.reserved_quantity || 0);
+            if (available < quantity) {
+                throw new Error(
+                    `Insufficient available quantity. Available: ${available}, ` +
+                    `Total: ${item.quantity}, Reserved: ${item.reserved_quantity || 0}`
+                );
             }
+
+            // Reserve the units so no other transfer can claim them
+            item.reserved_quantity = (item.reserved_quantity || 0) + quantity;
+            await item.save();
 
             const transfer = await TransferRequest.create({
                 item_id,
@@ -179,6 +189,13 @@ class TransferService {
             transfer.notes = reason;
             await transfer.save();
 
+            // Release the reservation
+            const item = await Item.findById(transfer.item_id);
+            if (item) {
+                item.reserved_quantity = Math.max(0, (item.reserved_quantity || 0) - transfer.quantity);
+                await item.save();
+            }
+
             await AuditService.logAction('REJECT_TRANSFER', 'TransferRequest', id, approvedBy, { reason });
 
             // Notify the requester
@@ -214,6 +231,7 @@ class TransferService {
     }
 
     async completeTransfer(id) {
+        const cache = require('../utils/cache');
         try {
             const transfer = await TransferRequest.findById(id);
             if (!transfer) throw new Error('Transfer request not found');
@@ -221,31 +239,84 @@ class TransferService {
                 throw new Error('Only approved or in-transit requests can be completed');
             }
 
-            const item = await Item.findById(transfer.item_id);
-            if (!item) throw new Error('Item not found');
+            // Load the source item
+            const sourceItem = await Item.findById(transfer.item_id);
+            if (!sourceItem) throw new Error('Source item not found');
 
-            const oldLocationId = item.location_id;
-            item.location_id = transfer.to_location_id;
-            await item.save();
+            const qty = transfer.quantity;
 
+            // Re-validate: source must still have enough total units
+            if (sourceItem.quantity < qty) {
+                throw new Error(
+                    `Insufficient quantity at source. Available: ${sourceItem.quantity}, requested: ${qty}`
+                );
+            }
+
+            // --- 1. Deduct from source and release reservation ---
+            sourceItem.quantity -= qty;
+            sourceItem.reserved_quantity = Math.max(0, (sourceItem.reserved_quantity || 0) - qty);
+            await sourceItem.save();
+
+            // --- 2. Add to destination ---
+            // Look for an existing item record with the same name at the destination location
+            let destItem = await Item.findOne({
+                name: sourceItem.name,
+                location_id: transfer.to_location_id
+            });
+
+            if (destItem) {
+                // Merge into existing record
+                destItem.quantity += qty;
+                await destItem.save();
+            } else {
+                // Create a new item record at the destination.
+                // Strip unique-per-record fields (sku, serial_number) to avoid index collisions.
+                const { _id, __v, createdAt, updatedAt, location_id, quantity, sku, serial_number, ...itemFields } = sourceItem.toObject();
+                destItem = await Item.create({
+                    ...itemFields,
+                    quantity: qty,
+                    location_id: transfer.to_location_id,
+                    status: 'available'
+                });
+            }
+
+            // --- 3. Log location history for the transferred units ---
             await LocationHistory.create([{
-                item_id: transfer.item_id,
-                from_location_id: oldLocationId,
+                item_id: sourceItem._id,
+                from_location_id: transfer.from_location_id,
                 to_location_id: transfer.to_location_id,
                 changed_by: transfer.requested_by,
                 change_type: 'manual',
-                notes: `Transfer completed. Request ID: ${transfer._id}`
+                notes: `Transfer completed (${qty} units). Request ID: ${transfer._id}`
             }]);
 
+            // --- 4. Mark transfer completed ---
             transfer.status = 'completed';
             transfer.actual_arrival = new Date();
             await transfer.save();
 
-            await AuditService.logAction('COMPLETE_TRANSFER', 'TransferRequest', transfer._id, transfer.requested_by);
+            // Invalidate item caches
+            await cache.del(cache.getCacheKey('item', sourceItem._id.toString()));
+            await cache.del(cache.getCacheKey('item', destItem._id.toString()));
+            await cache.delPattern('jossie:items:list*');
+            await cache.delPattern('jossie:analytics:*');
+
+            await AuditService.logAction('COMPLETE_TRANSFER', 'TransferRequest', transfer._id, transfer.requested_by, {
+                sourceItem: sourceItem._id,
+                destItem: destItem._id,
+                quantityMoved: qty,
+                sourceRemainingQty: sourceItem.quantity,
+                destNewQty: destItem.quantity
+            });
 
             socketUtil.emit('TRANSFER_UPDATED', { type: 'complete', transferId: id });
 
-            logger.info(`Transfer ${id} completed. Item ${item.name} moved to ${transfer.to_location_id}`);
+            logger.info(
+                `Transfer ${id} completed. ${qty} units of "${sourceItem.name}" moved ` +
+                `from ${transfer.from_location_id} to ${transfer.to_location_id}. ` +
+                `Source remaining: ${sourceItem.quantity}, Dest total: ${destItem.quantity}`
+            );
+
             return await this.getTransferById(id);
         } catch (error) {
             logger.error('Complete transfer error:', error);

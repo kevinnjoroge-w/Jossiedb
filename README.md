@@ -1,72 +1,163 @@
-# Getting Started with Create React App
+# JossieDB — Equipment & Inventory Management System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack inventory and equipment management platform built for tracking, transferring, and maintaining equipment across multiple site locations.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Tech Stack
 
-### `npm start`
+**Frontend**
+- React 18 + Vite
+- Tailwind CSS v4
+- Framer Motion (animations)
+- Lucide React (icons)
+- Socket.IO client (real-time updates)
+- React Hot Toast
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Backend**
+- Node.js + Express
+- MongoDB + Mongoose
+- Socket.IO (real-time events)
+- JWT authentication
+- Redis (caching)
+- Winston (logging)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Inventory Management
+- View all inventory items as cards, grouped by item name (deduplicated across locations)
+- Click any item to see a **location summary modal** — total quantity and per-location breakdown
+- Add, edit, and delete items (admin only)
+- Low-stock highlighting when quantity falls below minimum threshold
+- Items support SKU, serial number, description, condition, and status tracking
 
-### `npm run build`
+### Location Transfers
+- Request transfers of a specific quantity of an item from one location to another
+- Approval workflow: **Pending → Approved → Completed**
+- On completion, quantity is deducted from the source and added at the destination
+  - If the item already exists at the destination, its quantity is incremented
+  - If not, a new record is created at that location
+- Reject transfers with a reason
+- Real-time updates via Socket.IO when transfers are approved or completed
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Maintenance Tracking
+- Schedule preventive, corrective, or inspection maintenance jobs for any item
+- Assign a technician to each job (optional)
+- Status lifecycle: **Scheduled → In Progress → Completed / Cancelled**
+- Overdue detection — records past their scheduled date are highlighted in red
+- Mark complete with technician notes recorded
+- Summary stats: Active, Overdue, Completed, Total
+- Searchable and filterable by status
+- Delete records (admin only)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Location Management
+- Create and manage site locations
+- Assign foremen to locations (restricts their inventory view to assigned sites)
+- View all items at a given location
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### User Management (Admin)
+- Create, edit, and delete users
+- Role-based access: **Admin**, **Supervisor**, **Foreman**
+- Foremen are restricted to inventory and transfers at their assigned locations only
 
-### `npm run eject`
+### Notifications
+- In-app notifications for transfer requests, approvals, and rejections
+- Mark notifications as read
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Analytics (Admin / Supervisor)
+- Inventory overview — item counts, low-stock alerts
+- Transfer activity over time
+- Location utilization
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Audit Logs (Admin / Supervisor)
+- Full audit trail of all create, update, delete, and status-change actions
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Projects
+- Attach notes and context to ongoing site projects
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## Role Permissions
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Action | Admin | Supervisor | Foreman |
+|---|:---:|:---:|:---:|
+| View inventory | ✓ | ✓ | ✓ (own locations) |
+| Add / edit / delete items | ✓ | — | — |
+| Request transfer | ✓ | ✓ | ✓ |
+| Approve / reject transfer | ✓ | ✓ | — |
+| Schedule maintenance | ✓ | — | — |
+| Update maintenance status | ✓ | ✓ | ✓ |
+| Manage users | ✓ | — | — |
+| View analytics | ✓ | ✓ | — |
+| View audit logs | ✓ | ✓ | — |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Prerequisites
+- Node.js 18+
+- MongoDB
+- Redis (optional, for caching)
 
-### Analyzing the Bundle Size
+### Installation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+# Install root (frontend) dependencies
+npm install
 
-### Making a Progressive Web App
+# Install backend dependencies
+cd server && npm install
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Environment Variables
 
-### Advanced Configuration
+Create `server/.env`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```env
+PORT=8000
+MONGODB_URI=mongodb://localhost:27017/jossiedb
+JWT_SECRET=your_jwt_secret
+REDIS_URL=redis://localhost:6379   # optional
+```
 
-### Deployment
+> **Note on Redis (Caching):** Redis is highly recommended for production at scale, but the system is designed with a **graceful fallback**. If `REDIS_URL` is omitted or the Redis server goes offline, the application will automatically log a warning and fallback to direct database queries without crashing.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Create `.env` (frontend):
 
-### `npm run build` fails to minify
+```env
+VITE_API_URL=http://localhost:8000/api
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# db
-# db
+### Running in Development
+
+```bash
+# From the project root — starts both frontend and backend
+npm run dev
+```
+
+Frontend runs on `http://localhost:5173`  
+Backend runs on `http://localhost:8000`
+
+---
+
+## Project Structure
+
+```
+Jossiedb/
+├── src/                    # React frontend
+│   ├── pages/              # Route-level page components
+│   ├── components/         # Shared UI and feature components
+│   ├── services/           # API call wrappers
+│   ├── context/            # Auth, Socket, Theme providers
+│   └── utils/              # Axios instance and helpers
+└── server/
+    └── src/
+        ├── models/         # Mongoose models
+        ├── routes/         # Express route handlers
+        ├── services/       # Business logic layer
+        ├── middlewares/    # Auth, location filter, error handling
+        └── utils/          # Logger, cache, socket helpers
+```

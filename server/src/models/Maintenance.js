@@ -36,6 +36,10 @@ const maintenanceSchema = new mongoose.Schema({
     },
     technician_notes: {
         type: String
+    },
+    recurring: {
+        enabled: { type: Boolean, default: false },
+        frequency_days: { type: Number }
     }
 }, {
     timestamps: true,

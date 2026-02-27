@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Package, Edit2, Trash2, X, MapPin } from 'lucide-react';
+import { Plus, Search, Package, Edit2, Trash2, X, MapPin, BarChart2 } from 'lucide-react';
 import { inventoryService } from '../services/inventoryService';
 import { transferService } from '../services/transferService';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +46,10 @@ const InventoryPage = () => {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [history, setHistory] = useState([]);
     const [historyItem, setHistoryItem] = useState(null);
+
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [detailSummary, setDetailSummary] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
     useEffect(() => {
         fetchItems();
@@ -135,6 +139,21 @@ const InventoryPage = () => {
         }
     };
 
+    const viewItemDetail = async (item) => {
+        setDetailSummary(null);
+        setIsDetailModalOpen(true);
+        setDetailLoading(true);
+        try {
+            const data = await inventoryService.getItemLocationSummary(item.id);
+            setDetailSummary(data);
+        } catch (error) {
+            toast.error('Failed to load item summary');
+            setIsDetailModalOpen(false);
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
     const resetForm = () => {
         setCurrentItem(null);
         setFormData({
@@ -145,7 +164,31 @@ const InventoryPage = () => {
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.location?.name && item.location.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (item.Location?.name && item.Location.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    // Deduplicate by name — merge all location-records for the same item into one card
+    const groupedItems = Object.values(
+        filteredItems.reduce((acc, item) => {
+            const key = item.name.toLowerCase();
+            if (!acc[key]) {
+                // First record for this name — use it as the "primary" record
+                acc[key] = {
+                    ...item,
+                    _totalQuantity: item.quantity || 0,
+                    _locationNames: (item.location?.name || item.Location?.name) ? [item.location?.name || item.Location?.name] : [],
+                    _primaryRecord: item // keep ref for action buttons
+                };
+            } else {
+                acc[key]._totalQuantity += (item.quantity || 0);
+                const locName = item.location?.name || item.Location?.name;
+                if (locName && !acc[key]._locationNames.includes(locName)) {
+                    acc[key]._locationNames.push(locName);
+                }
+            }
+            return acc;
+        }, {})
     );
 
     return (
@@ -173,21 +216,27 @@ const InventoryPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredItems.map((item, idx) => (
-                    <motion.div key={item.id || item._id || idx} layout className="glass p-6 rounded-xl relative group bg-slate-800/95">
+                {groupedItems.map((item, idx) => (
+                    <motion.div key={item.id || item._id || idx} layout className="glass p-6 rounded-xl relative group bg-slate-800/95 cursor-pointer" onClick={(e) => { if (!e.target.closest('button')) viewItemDetail(item); }}>
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 bg-slate-800 rounded-lg">
                                 <Package className="w-6 h-6 text-primary-400" />
                             </div>
                             <div className="flex flex-col items-end gap-2">
-                                <span className={`px-2 py-1 rounded text-xs font-medium ${item.quantity <= item.min_quantity ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${item._totalQuantity <= item.min_quantity ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
                                     }`}>
-                                    {item.quantity} in stock
+                                    {item._totalQuantity} in stock
                                 </span>
-                                {item.Location && (
+                                {item._locationNames.length === 1 && (
                                     <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-white px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
                                         <MapPin className="w-3 h-3 text-primary-500" />
-                                        {item.Location.name}
+                                        {item._locationNames[0]}
+                                    </span>
+                                )}
+                                {item._locationNames.length > 1 && (
+                                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-primary-400 px-2 py-0.5 rounded bg-primary-500/10 border border-primary-500/30">
+                                        <MapPin className="w-3 h-3" />
+                                        {item._locationNames.length} locations
                                     </span>
                                 )}
                             </div>
@@ -238,7 +287,7 @@ const InventoryPage = () => {
                                     setCurrentItem(item);
                                     setFormData({
                                         ...item,
-                                        location_name: item.Location?.name || ''
+                                        location_name: item.location?.name || item.Location?.name || ''
                                     });
                                     setIsModalOpen(true);
                                 }} className="p-2 bg-slate-700 rounded hover:bg-slate-600 text-white">
@@ -461,6 +510,82 @@ const InventoryPage = () => {
                                     ))
                                 )}
                             </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+            {/* Item Detail / Location Summary Modal */}
+            <AnimatePresence>
+                {isDetailModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl p-6"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary-600/20 rounded-lg">
+                                        <BarChart2 className="w-5 h-5 text-primary-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">
+                                            {detailSummary?.name ?? '...'}
+                                        </h2>
+                                        {detailSummary?.sku && (
+                                            <p className="text-xs text-slate-400">SKU: {detailSummary.sku}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsDetailModalOpen(false)}>
+                                    <X className="text-slate-400 hover:text-white" />
+                                </button>
+                            </div>
+
+                            {detailLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            ) : detailSummary ? (
+                                <div className="space-y-4">
+                                    {/* Total banner */}
+                                    <div className="flex items-center justify-between p-4 rounded-xl bg-primary-600/10 border border-primary-500/30">
+                                        <span className="text-sm font-semibold text-slate-300">Total Items (all locations)</span>
+                                        <span className="text-3xl font-black text-primary-400">{detailSummary.totalQuantity}</span>
+                                    </div>
+
+                                    {/* Per-location breakdown */}
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 px-1">By Location</p>
+                                        {detailSummary.byLocation.length === 0 && detailSummary.noLocationQuantity === 0 ? (
+                                            <p className="text-center py-6 text-slate-500 italic text-sm">No location data available.</p>
+                                        ) : (
+                                            <>
+                                                {detailSummary.byLocation.map((loc, i) => (
+                                                    <div key={i} className="flex items-center justify-between px-4 py-3 rounded-lg bg-slate-800/80 border border-slate-700">
+                                                        <div className="flex items-center gap-2">
+                                                            <MapPin className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                                                            <span className="text-sm text-white font-medium">{loc.location_name}</span>
+                                                            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${loc.status === 'available' ? 'bg-green-500/20 text-green-400' :
+                                                                loc.status === 'checked_out' ? 'bg-blue-500/20 text-blue-400' :
+                                                                    'bg-slate-600/40 text-slate-400'
+                                                                }`}>{loc.status?.replace('_', ' ')}</span>
+                                                        </div>
+                                                        <span className="text-lg font-black text-white">{loc.quantity}</span>
+                                                    </div>
+                                                ))}
+                                                {detailSummary.noLocationQuantity > 0 && (
+                                                    <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-slate-800/50 border border-dashed border-slate-700">
+                                                        <span className="text-sm text-slate-400 italic">No location assigned</span>
+                                                        <span className="text-lg font-black text-slate-300">{detailSummary.noLocationQuantity}</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : null}
                         </motion.div>
                     </div>
                 )}

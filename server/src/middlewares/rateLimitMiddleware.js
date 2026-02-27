@@ -41,7 +41,11 @@ class RateLimiter {
 // Create auth-specific rate limiter (stricter)
 const authLimiter = new RateLimiter(15 * 60 * 1000, 5); // 5 requests per 15 minutes
 
+// Create general API rate limiter (relaxed)
+const apiLimiter = new RateLimiter(15 * 60 * 1000, 200); // 200 requests per 15 minutes
+
 module.exports = {
     RateLimiter,
-    authLimiter
+    authLimiter,
+    apiLimiter
 };

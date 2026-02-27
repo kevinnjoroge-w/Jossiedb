@@ -187,4 +187,22 @@ router.get('/session-stats', authenticate, async (req, res, next) => {
     }
 });
 
+/**
+ * Refresh Auth Token
+ * POST /auth/refresh
+ * Body: { refreshToken }
+ */
+router.post('/refresh', async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+
+        const result = await AuthService.refreshAuthToken(refreshToken);
+        res.json(result);
+    } catch (err) {
+        logger.error('Failed to refresh token:', err.message);
+        res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+});
+
 module.exports = router;

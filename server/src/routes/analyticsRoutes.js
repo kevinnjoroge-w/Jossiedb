@@ -52,4 +52,22 @@ router.get('/most-used', async (req, res, next) => {
     }
 });
 
+router.get('/transfer-time', async (req, res, next) => {
+    try {
+        const data = await AnalyticsService.getTransferApprovalTime(req.assignedLocationIds);
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/maintenance-compliance', async (req, res, next) => {
+    try {
+        const data = await AnalyticsService.getMaintenanceCompliance(req.assignedLocationIds);
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;

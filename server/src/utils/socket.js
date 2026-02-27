@@ -4,9 +4,11 @@ const logger = require('./logger');
 let io;
 
 const init = (server) => {
+    const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:3000';
+
     io = new Server(server, {
         cors: {
-            origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // Secure CORS origin
+            origin: allowedOrigins,
             methods: ['GET', 'POST'],
             credentials: true
         }

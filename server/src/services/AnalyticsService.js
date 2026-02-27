@@ -192,6 +192,99 @@ class AnalyticsService {
             throw error;
         }
     }
+
+    async getTransferApprovalTime(locationIds = null) {
+        try {
+            const pipeline = [
+                { $match: { status: { $in: ['approved', 'completed'] } } }
+            ];
+
+            if (locationIds) {
+                const objectIdLocationIds = locationIds.map(id => new mongoose.Types.ObjectId(id));
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { from_location_id: { $in: objectIdLocationIds } },
+                            { to_location_id: { $in: objectIdLocationIds } }
+                        ]
+                    }
+                });
+            }
+
+            pipeline.push({
+                $group: {
+                    _id: null,
+                    avg_processing_ms: {
+                        $avg: { $subtract: ['$updatedAt', '$createdAt'] }
+                    },
+                    total_processed: { $sum: 1 }
+                }
+            });
+
+            const result = await TransferRequest.aggregate(pipeline);
+            const avgHours = result.length > 0 ? (result[0].avg_processing_ms / (1000 * 60 * 60)).toFixed(1) : 0;
+            return { avgHours: Number(avgHours), total: result.length > 0 ? result[0].total_processed : 0 };
+        } catch (error) {
+            logger.error('Get transfer approval time error:', error);
+            throw error;
+        }
+    }
+
+    async getMaintenanceCompliance(locationIds = null) {
+        try {
+            const pipeline = [
+                { $match: { status: 'completed', scheduled_date: { $exists: true }, completed_date: { $exists: true } } }
+            ];
+
+            if (locationIds) {
+                const objectIdLocationIds = locationIds.map(id => new mongoose.Types.ObjectId(id));
+                pipeline.push(
+                    {
+                        $lookup: {
+                            from: 'items',
+                            localField: 'item_id',
+                            foreignField: '_id',
+                            as: 'item_info'
+                        }
+                    },
+                    { $unwind: '$item_info' },
+                    { $match: { 'item_info.location_id': { $in: objectIdLocationIds } } }
+                );
+            }
+
+            pipeline.push({
+                $project: {
+                    is_compliant: {
+                        $cond: {
+                            // If completed on or before scheduled date (+1 day grace period)
+                            if: { $lte: ['$completed_date', { $add: ['$scheduled_date', 86400000] }] },
+                            then: 1,
+                            else: 0
+                        }
+                    }
+                }
+            });
+
+            pipeline.push({
+                $group: {
+                    _id: null,
+                    total_completed: { $sum: 1 },
+                    compliant_count: { $sum: '$is_compliant' }
+                }
+            });
+
+            const result = await Maintenance.aggregate(pipeline);
+            if (result.length === 0 || result[0].total_completed === 0) {
+                return { complianceRate: 0, total: 0 };
+            }
+
+            const complianceRate = ((result[0].compliant_count / result[0].total_completed) * 100).toFixed(1);
+            return { complianceRate: Number(complianceRate), total: result[0].total_completed };
+        } catch (error) {
+            logger.error('Get maintenance compliance error:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = new AnalyticsService();

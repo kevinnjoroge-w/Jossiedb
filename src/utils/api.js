@@ -3,12 +3,26 @@ import toast from 'react-hot-toast';
 
 // Create axios instance
 const api = axios.create({
-    baseURL: 'http://localhost:3002/api/v1',
+    baseURL: `http://${window.location.hostname}:3002/api/v1`,
     headers: {
         'Content-Type': 'application/json',
     },
     timeout: 15000 // 15 second timeout to prevent hanging requests
 });
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -33,11 +47,51 @@ api.interceptors.response.use(
 
             // Handle specific error codes
             if (status === 401) {
-                // Don't redirect/toast for background auth checks (e.g. /auth/profile)
-                const isAuthCheck = error.config?.url?.includes('/auth/profile');
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                if (!isAuthCheck) {
+                const originalRequest = error.config;
+                const isAuthCheck = originalRequest.url?.includes('/auth/profile');
+
+                if (!originalRequest._retry && !isAuthCheck && localStorage.getItem('refreshToken')) {
+                    if (isRefreshing) {
+                        return new Promise(function (resolve, reject) {
+                            failedQueue.push({ resolve, reject });
+                        }).then(token => {
+                            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                            return api(originalRequest);
+                        }).catch(err => {
+                            return Promise.reject(err);
+                        });
+                    }
+
+                    originalRequest._retry = true;
+                    isRefreshing = true;
+
+                    return new Promise(function (resolve, reject) {
+                        api.post('/auth/refresh', { refreshToken: localStorage.getItem('refreshToken') })
+                            .then(({ data }) => {
+                                localStorage.setItem('token', data.token);
+                                localStorage.setItem('refreshToken', data.refreshToken);
+                                api.defaults.headers.common['Authorization'] = 'Bearer ' + data.token;
+                                originalRequest.headers['Authorization'] = 'Bearer ' + data.token;
+                                processQueue(null, data.token);
+                                resolve(api(originalRequest));
+                            })
+                            .catch((err) => {
+                                processQueue(err, null);
+                                localStorage.removeItem('token');
+                                localStorage.removeItem('refreshToken');
+                                localStorage.removeItem('user');
+                                window.location.href = '/login';
+                                toast.error('Session expired. Please login again.');
+                                reject(err);
+                            })
+                            .finally(() => {
+                                isRefreshing = false;
+                            });
+                    });
+                } else if (!isAuthCheck) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('user');
                     window.location.href = '/login';
                     toast.error('Session expired. Please login again.');
                 }

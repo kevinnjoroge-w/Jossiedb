@@ -7,6 +7,8 @@ const socketUtil = require('./utils/socket');
 const cache = require('./utils/cache');
 const { createSessionMiddleware, validateSession } = require('./config/session');
 const { sessionActivityLogger, initializeSessionCleanup } = require('./utils/sessionManager');
+const { apiLimiter } = require('./middlewares/rateLimitMiddleware');
+const { startMaintenanceCron } = require('./cron/maintenanceCron');
 require('dotenv').config();
 
 // Initialize app
@@ -14,8 +16,10 @@ const app = express();
 
 // Middleware
 app.use(helmet()); // Security headers
+const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:3000';
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true // Allow credentials (cookies)
 })); // CORS support with credentials
 app.use(express.json()); // Parse JSON bodies
@@ -29,12 +33,17 @@ app.use(sessionActivityLogger); // Track session activity
 
 // Health check route
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date() });
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date(),
+        cacheConnected: cache.isConnected()
+    });
 });
 
 // API Routes
 const apiRoutes = require('./routes');
-app.use('/api/v1', apiRoutes);
+// Apply general rate limit to all /api/v1 routes
+app.use('/api/v1', apiLimiter.middleware(), apiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -75,7 +84,7 @@ if (require.main === module) {
             logger.error('CRITICAL: SESSION_SECRET not set or using default value');
             process.exit(1);
         }
-        
+
         if (!SESSION_CRYPTO_SECRET || SESSION_CRYPTO_SECRET === 'session-crypto-secret') {
             logger.error('CRITICAL: SESSION_CRYPTO_SECRET not set or using default value');
             process.exit(1);
@@ -98,16 +107,19 @@ if (require.main === module) {
 
     const server = app.listen(PORT, async () => {
         logger.info(`Server running on port ${PORT}`);
-        
+
         // Initialize cache (Redis)
         try {
             await cache.initializeRedis();
         } catch (err) {
             logger.warn('Cache initialization failed, continuing without cache:', err.message);
         }
-        
+
         // Initialize session cleanup scheduler
         initializeSessionCleanup();
+
+        // Initialize recurring maintenance cron jobs
+        startMaintenanceCron();
     });
 
     // Initialize Socket.io
@@ -116,10 +128,10 @@ if (require.main === module) {
     // Graceful shutdown
     const shutdown = async () => {
         logger.info('Shutting down server...');
-        
+
         // Close cache connection
         await cache.close();
-        
+
         server.close(() => {
             logger.info('Server closed');
             mongoose.connection.close(false, () => {

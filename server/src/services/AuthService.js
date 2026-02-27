@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { User, SessionLog } = require('../models');
 const logger = require('../utils/logger');
 const WebhookService = require('./WebhookService');
@@ -33,14 +34,18 @@ class AuthService {
             // Create user
             const user = await User.create(userData);
 
-            // Generate token
+            // Generate tokens
             const token = this.generateToken(user);
+            const refreshToken = this.generateRefreshToken();
+
+            user.refreshToken = refreshToken;
+            await user.save();
 
             // Return user without password
             const userResponse = user.toObject();
             delete userResponse.password;
 
-            return { user: userResponse, token };
+            return { user: userResponse, token, refreshToken };
         } catch (error) {
             logger.error('Registration error:', error);
             throw error;
@@ -65,6 +70,10 @@ class AuthService {
 
             // Generate JWT token
             const token = this.generateToken(user);
+            const refreshToken = this.generateRefreshToken();
+
+            user.refreshToken = refreshToken;
+            await user.save();
 
             // Create session if request object is provided
             if (req && req.session) {
@@ -85,7 +94,7 @@ class AuthService {
                 timestamp: new Date().toISOString()
             });
 
-            return { user: userResponse, token };
+            return { user: userResponse, token, refreshToken };
         } catch (error) {
             logger.error('Login error:', error);
             throw error;
@@ -242,6 +251,38 @@ class AuthService {
             JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );
+    }
+
+    generateRefreshToken() {
+        return crypto.randomBytes(40).toString('hex');
+    }
+
+    /**
+     * Use refresh token to get a new access token
+     */
+    async refreshAuthToken(refreshToken) {
+        try {
+            if (!refreshToken) throw new Error('Refresh token is required');
+
+            const user = await User.findOne({ refreshToken });
+            if (!user) {
+                throw new Error('Invalid refresh token');
+            }
+
+            const token = this.generateToken(user);
+            const newRefreshToken = this.generateRefreshToken();
+
+            user.refreshToken = newRefreshToken;
+            await user.save();
+
+            const userResponse = user.toObject();
+            delete userResponse.password;
+
+            return { user: userResponse, token, refreshToken: newRefreshToken };
+        } catch (error) {
+            logger.error('Token refresh error:', error);
+            throw error;
+        }
     }
 
     /**

@@ -23,6 +23,11 @@ const itemSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    reserved_quantity: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     min_quantity: {
         type: Number,
         default: 5

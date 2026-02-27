@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { TrendingUp, Package, AlertTriangle, CheckCircle } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, CheckCircle, Clock, ClipboardCheck } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 import Loading from '../components/ui/Loading';
 
 const AnalyticsPage = () => {
     const [data, setData] = useState(null);
+    const [transferMetrics, setTransferMetrics] = useState(null);
+    const [complianceMetrics, setComplianceMetrics] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const summary = await analyticsService.getSummary();
+                const [summary, transfers, compliance] = await Promise.all([
+                    analyticsService.getSummary(),
+                    analyticsService.getTransferTime(),
+                    analyticsService.getMaintenanceCompliance()
+                ]);
                 setData(summary);
+                setTransferMetrics(transfers);
+                setComplianceMetrics(compliance);
             } catch (error) {
                 console.error('Failed to load analytics', error);
             } finally {
@@ -40,11 +48,17 @@ const AnalyticsPage = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatsCard title="Total Inventory" value={data?.totalItems || 0} icon={Package} color="text-blue-400" />
+                <StatsCard title="Average Transfer Time" value={`${transferMetrics?.avgHours || 0} hrs`} icon={Clock} color="text-yellow-400" />
+                <StatsCard title="Maintenance Compliance" value={`${complianceMetrics?.complianceRate || 0}%`} icon={ClipboardCheck} color="text-green-400" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                 <StatsCard title="Low Stock Alerts" value={data?.lowStockItems || 0} icon={AlertTriangle} color="text-red-400" />
-                <StatsCard title="Active Checkouts" value={data?.checkedOutItems || 0} icon={TrendingUp} color="text-yellow-400" />
+                <StatsCard title="Active Transfers" value={data?.activeTransfers || 0} icon={TrendingUp} color="text-yellow-400" />
                 <StatsCard title="Active Projects" value={data?.activeProjects || 0} icon={CheckCircle} color="text-green-400" />
+                <StatsCard title="Pending Maintenance" value={data?.pendingMaintenance || 0} icon={ClipboardCheck} color="text-slate-400" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

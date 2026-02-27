@@ -77,6 +77,46 @@ router.put('/:id/location', locationFilter, authorize(['admin']), async (req, re
     }
 });
 
+// Get item location summary (total qty + per-location breakdown)
+router.get('/:id/location-summary', async (req, res, next) => {
+    try {
+        const { Item, Location } = require('../models');
+        const item = await Item.findById(req.params.id);
+        if (!item) return res.status(404).json({ error: 'Item not found' });
+
+        // Find all items with the same name (across all locations)
+        const siblings = await Item.find({ name: item.name })
+            .populate('location_id', 'name')
+            .lean();
+
+        const totalQuantity = siblings.reduce((sum, s) => sum + (s.quantity || 0), 0);
+
+        const byLocation = siblings
+            .filter(s => s.location_id)
+            .map(s => ({
+                location_id: s.location_id._id,
+                location_name: s.location_id.name,
+                quantity: s.quantity || 0,
+                status: s.status
+            }));
+
+        // Also count items with no location
+        const noLocationQty = siblings
+            .filter(s => !s.location_id)
+            .reduce((sum, s) => sum + (s.quantity || 0), 0);
+
+        res.json({
+            name: item.name,
+            sku: item.sku,
+            totalQuantity,
+            byLocation,
+            noLocationQuantity: noLocationQty
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // Get item location history
 router.get('/:id/location-history', async (req, res, next) => {
     try {

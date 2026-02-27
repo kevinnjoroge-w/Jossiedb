@@ -59,6 +59,11 @@ export const inventoryService = {
         return response.data;
     },
 
+    getItemLocationSummary: async (itemId) => {
+        const response = await api.get(`/items/${itemId}/location-summary`);
+        return response.data;
+    },
+
     getLocationHistory: async (itemId) => {
         const response = await api.get(`/items/${itemId}/location-history`);
         return response.data;
